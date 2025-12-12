@@ -1,0 +1,1815 @@
+import React, { useState } from 'react';
+import { 
+  Calendar, User, BarChart3, Settings, ChevronRight, ChevronLeft,
+  MapPin, Star, Phone, Clock, Scissors, Plus, X, Check, Edit2, Trash2,
+  MessageCircle, Bell, Camera, Lock, LogOut, TrendingUp, TrendingDown,
+  Users, DollarSign, Award, CalendarDays, ChevronDown, AlertCircle
+} from 'lucide-react';
+
+// ============ MOCK DATA ============
+
+const mockBarberProfile = {
+  id: 1,
+  name: "יעקב כהן",
+  shopName: "Jaco's Barbershop",
+  phone: "050-1234567",
+  email: "jaco@barbershop.com",
+  address: "משעול גיל 1, כפר סבא",
+  bio: "ספר מקצועי עם 10 שנות ניסיון. מתמחה בתספורות גברים מודרניות ועיצוב זקן.",
+  rating: 5.0,
+  reviewsCount: 16,
+};
+
+const mockServices = [
+  { id: 1, name: "תספורת גבר", duration: 40, price: 100, active: true },
+  { id: 2, name: "תספורת + זקן", duration: 45, price: 130, active: true },
+  { id: 3, name: "סידור זקן", duration: 20, price: 70, active: true },
+  { id: 4, name: "צבע שיער", duration: 60, price: 180, active: true },
+];
+
+const mockWorkingHours = [
+  { day: "ראשון", open: "09:00", close: "19:00", isOpen: true },
+  { day: "שני", open: "09:00", close: "19:00", isOpen: true },
+  { day: "שלישי", open: "09:00", close: "19:00", isOpen: true },
+  { day: "רביעי", open: "09:00", close: "19:00", isOpen: true },
+  { day: "חמישי", open: "09:00", close: "20:00", isOpen: true },
+  { day: "שישי", open: "08:00", close: "14:00", isOpen: true },
+  { day: "שבת", open: "", close: "", isOpen: false },
+];
+
+const mockAppointments = [
+  { id: 1, clientName: "דוד לוי", clientPhone: "052-1111111", service: "תספורת גבר", date: "2025-01-15", time: "09:00", duration: 40, price: 100, status: "confirmed" },
+  { id: 2, clientName: "משה כהן", clientPhone: "052-2222222", service: "תספורת + זקן", date: "2025-01-15", time: "10:00", duration: 45, price: 130, status: "confirmed" },
+  { id: 3, clientName: "אבי ישראלי", clientPhone: "052-3333333", service: "סידור זקן", date: "2025-01-15", time: "11:30", duration: 20, price: 70, status: "pending" },
+  { id: 4, clientName: "יוסי אברהם", clientPhone: "052-4444444", service: "תספורת גבר", date: "2025-01-15", time: "14:00", duration: 40, price: 100, status: "completed" },
+  { id: 5, clientName: "רון דוד", clientPhone: "052-5555555", service: "צבע שיער", date: "2025-01-16", time: "09:00", duration: 60, price: 180, status: "confirmed" },
+  { id: 6, clientName: "גיל שמעון", clientPhone: "052-6666666", service: "תספורת גבר", date: "2025-01-16", time: "11:00", duration: 40, price: 100, status: "confirmed" },
+  { id: 7, clientName: "עמית לוי", clientPhone: "052-7777777", service: "תספורת + זקן", date: "2025-01-17", time: "10:00", duration: 45, price: 130, status: "confirmed" },
+];
+
+const mockReviews = [
+  { id: 1, clientName: "דוד לוי", rating: 5, text: "ספר מעולה! תספורת מושלמת", date: "2025-01-10" },
+  { id: 2, clientName: "משה כהן", rating: 5, text: "שירות מקצועי ואדיב", date: "2025-01-08" },
+  { id: 3, clientName: "אבי ישראלי", rating: 5, text: "המקום הכי טוב באזור", date: "2025-01-05" },
+];
+
+const mockPhotos = [
+  { id: 1, url: "photo1" },
+  { id: 2, url: "photo2" },
+  { id: 3, url: "photo3" },
+];
+
+const mockBlockedSlots = [
+  { id: 1, date: "2025-01-20", startTime: "12:00", endTime: "14:00", reason: "הפסקת צהריים" },
+];
+
+const mockNotifications = [
+  { id: 1, type: "new_appointment", message: "תור חדש נקבע: דוד לוי, תספורת גבר", time: "לפני 5 דקות", read: false },
+  { id: 2, type: "cancelled", message: "תור בוטל: משה כהן", time: "לפני שעה", read: true },
+];
+
+// ============ UTILITY COMPONENTS ============
+
+const LogoPlaceholder = ({ name, size = "md" }) => {
+  const sizes = {
+    sm: "w-12 h-12 text-lg",
+    md: "w-16 h-16 text-xl",
+    lg: "w-24 h-24 text-3xl",
+    xl: "w-32 h-32 text-4xl"
+  };
+  const initials = name?.split(' ').map(w => w[0]).join('').slice(0, 2) || "JB";
+  
+  return (
+    <div className={`${sizes[size]} rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/20`}>
+      <span className="font-bold text-white">{initials}</span>
+    </div>
+  );
+};
+
+const PhotoPlaceholder = ({ className = "" }) => (
+  <div className={`bg-gradient-to-br from-stone-700 via-stone-800 to-stone-900 flex items-center justify-center ${className}`}>
+    <Scissors className="text-amber-500/30" size={32} />
+  </div>
+);
+
+const StatusBadge = ({ status }) => {
+  const styles = {
+    confirmed: "bg-green-100 text-green-700 border-green-200",
+    pending: "bg-amber-100 text-amber-700 border-amber-200",
+    completed: "bg-blue-100 text-blue-700 border-blue-200",
+    cancelled: "bg-red-100 text-red-700 border-red-200",
+  };
+  const labels = {
+    confirmed: "מאושר",
+    pending: "ממתין",
+    completed: "הושלם",
+    cancelled: "בוטל",
+  };
+  
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${styles[status]}`}>
+      {labels[status]}
+    </span>
+  );
+};
+
+// ============ BOTTOM NAVIGATION ============
+
+const BottomNav = ({ activeTab, setActiveTab, notificationCount }) => {
+  const tabs = [
+    { id: 'profile', label: 'פרופיל', icon: User },
+    { id: 'calendar', label: 'יומן', icon: Calendar },
+    { id: 'stats', label: 'סטטיסטיקות', icon: BarChart3 },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-stone-100 px-2 pb-6 pt-3 z-50">
+      <div className="flex justify-around items-center max-w-md mx-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative flex flex-col items-center py-2 px-6 rounded-2xl transition-all duration-300 ${
+                isActive 
+                  ? 'bg-gradient-to-br from-amber-50 to-orange-50 text-amber-700' 
+                  : 'text-stone-400 hover:text-stone-600'
+              }`}
+            >
+              <Icon size={24} strokeWidth={isActive ? 2.5 : 1.8} />
+              <span className={`text-xs mt-1.5 ${isActive ? 'font-bold' : 'font-medium'}`}>
+                {tab.label}
+              </span>
+              {tab.id === 'calendar' && notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {notificationCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
+
+// ============ PROFILE SCREEN ============
+
+const ProfileScreen = ({ profile, services, workingHours, reviews, photos, onEditProfile, onEditServices, onEditHours }) => {
+  const [activeSection, setActiveSection] = useState('info');
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showHoursModal, setShowHoursModal] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-28">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-stone-900 via-stone-800 to-black pt-12 pb-20 px-5 rounded-b-[40px] shadow-2xl relative">
+        <div className="flex items-center justify-between mb-4">
+          <button className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+            <Bell className="text-white" size={20} />
+          </button>
+          <h1 className="text-xl font-bold text-white">הפרופיל שלי</h1>
+          <button className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+            <Settings className="text-white" size={20} />
+          </button>
+        </div>
+        
+        {/* Profile Card */}
+        <div className="absolute -bottom-16 left-5 right-5">
+          <div className="bg-white rounded-3xl p-5 shadow-xl shadow-stone-300/30 border border-stone-100">
+            <div className="flex items-center gap-4" style={{ direction: 'rtl' }}>
+              <LogoPlaceholder name={profile.shopName} size="lg" />
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-stone-800">{profile.shopName}</h2>
+                <p className="text-stone-500 text-sm">{profile.name}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Star className="fill-amber-400 text-amber-400" size={16} />
+                  <span className="font-bold text-stone-800">{profile.rating}</span>
+                  <span className="text-stone-400 text-sm">({profile.reviewsCount} ביקורות)</span>
+                </div>
+              </div>
+              <button className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <Edit2 className="text-amber-600" size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content */}
+      <div className="pt-20 px-4">
+        {/* Section Tabs */}
+        <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide" style={{ direction: 'rtl' }}>
+          {[
+            { id: 'info', label: 'פרטים' },
+            { id: 'services', label: 'שירותים' },
+            { id: 'hours', label: 'שעות פעילות' },
+            { id: 'photos', label: 'תמונות' },
+            { id: 'reviews', label: 'ביקורות' },
+          ].map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`px-5 py-2.5 rounded-full whitespace-nowrap transition-all duration-300 ${
+                activeSection === section.id
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold shadow-lg shadow-amber-500/20'
+                  : 'bg-white text-stone-600 border border-stone-200'
+              }`}
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+        
+        {/* Info Section */}
+        {activeSection === 'info' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl p-5 shadow-lg shadow-stone-200/30 border border-stone-100">
+              <h3 className="font-bold text-stone-800 mb-4 text-right">פרטי העסק</h3>
+              <div className="space-y-4" style={{ direction: 'rtl' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <MapPin className="text-amber-600" size={18} />
+                  </div>
+                  <div>
+                    <p className="text-stone-500 text-sm">כתובת</p>
+                    <p className="font-semibold text-stone-800">{profile.address}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <Phone className="text-amber-600" size={18} />
+                  </div>
+                  <div>
+                    <p className="text-stone-500 text-sm">טלפון</p>
+                    <p className="font-semibold text-stone-800">{profile.phone}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <User className="text-amber-600" size={18} />
+                  </div>
+                  <div>
+                    <p className="text-stone-500 text-sm">אודות</p>
+                    <p className="font-semibold text-stone-800 leading-relaxed">{profile.bio}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Services Section */}
+        {activeSection === 'services' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <button 
+                onClick={() => {
+                  setEditingService(null);
+                  setShowServiceModal(true);
+                }}
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-xl font-semibold shadow-lg shadow-amber-500/20"
+              >
+                <Plus size={18} />
+                הוסף שירות
+              </button>
+              <h3 className="font-bold text-stone-800">השירותים שלי</h3>
+            </div>
+            
+            {services.map((service) => (
+              <div key={service.id} className="bg-white rounded-2xl p-4 shadow-lg shadow-stone-200/30 border border-stone-100">
+                <div className="flex items-center justify-between" style={{ direction: 'rtl' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                      <Scissors className="text-amber-600" size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-stone-800">{service.name}</h4>
+                      <p className="text-stone-500 text-sm">{service.duration} דקות • ₪{service.price}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setEditingService(service);
+                        setShowServiceModal(true);
+                      }}
+                      className="w-9 h-9 bg-stone-100 rounded-lg flex items-center justify-center hover:bg-amber-100 transition-colors"
+                    >
+                      <Edit2 className="text-stone-500" size={16} />
+                    </button>
+                    <button className="w-9 h-9 bg-stone-100 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors">
+                      <Trash2 className="text-stone-500" size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Working Hours Section */}
+        {activeSection === 'hours' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <button 
+                onClick={() => setShowHoursModal(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-xl font-semibold shadow-lg shadow-amber-500/20"
+              >
+                <Edit2 size={18} />
+                עריכה
+              </button>
+              <h3 className="font-bold text-stone-800">שעות פעילות</h3>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-4 shadow-lg shadow-stone-200/30 border border-stone-100">
+              {workingHours.map((day, idx) => (
+                <div 
+                  key={idx} 
+                  className={`flex items-center justify-between py-3 ${idx !== workingHours.length - 1 ? 'border-b border-stone-100' : ''}`}
+                  style={{ direction: 'rtl' }}
+                >
+                  <span className="font-semibold text-stone-800">{day.day}</span>
+                  {day.isOpen ? (
+                    <span className="text-stone-600">{day.open} - {day.close}</span>
+                  ) : (
+                    <span className="text-red-500 font-medium">סגור</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Photos Section */}
+        {activeSection === 'photos' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <button className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-xl font-semibold shadow-lg shadow-amber-500/20">
+                <Camera size={18} />
+                הוסף תמונה
+              </button>
+              <h3 className="font-bold text-stone-800">תמונות העסק</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {photos.map((photo) => (
+                <div key={photo.id} className="relative aspect-square rounded-2xl overflow-hidden">
+                  <PhotoPlaceholder className="w-full h-full" />
+                  <button className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center">
+                    <Trash2 className="text-red-500" size={16} />
+                  </button>
+                </div>
+              ))}
+              <button className="aspect-square rounded-2xl border-2 border-dashed border-stone-300 flex flex-col items-center justify-center gap-2 hover:border-amber-400 hover:bg-amber-50 transition-colors">
+                <Plus className="text-stone-400" size={32} />
+                <span className="text-stone-400 text-sm">הוסף תמונה</span>
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {/* Reviews Section */}
+        {activeSection === 'reviews' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Star className="fill-amber-400 text-amber-400" size={20} />
+                <span className="font-bold text-stone-800">{profile.rating}</span>
+                <span className="text-stone-400">({reviews.length})</span>
+              </div>
+              <h3 className="font-bold text-stone-800">ביקורות</h3>
+            </div>
+            
+            {reviews.map((review) => (
+              <div key={review.id} className="bg-white rounded-2xl p-4 shadow-lg shadow-stone-200/30 border border-stone-100">
+                <div className="flex items-start justify-between" style={{ direction: 'rtl' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                      <User className="text-amber-600" size={18} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-stone-800">{review.clientName}</h4>
+                      <div className="flex items-center gap-1 mt-1">
+                        {[...Array(review.rating)].map((_, i) => (
+                          <Star key={i} className="fill-amber-400 text-amber-400" size={12} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-stone-400 text-sm">{review.date}</span>
+                </div>
+                <p className="mt-3 text-stone-600 text-right">{review.text}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {/* Service Modal */}
+      {showServiceModal && (
+        <ServiceModal 
+          service={editingService}
+          onClose={() => setShowServiceModal(false)}
+          onSave={(service) => {
+            console.log('Save service:', service);
+            setShowServiceModal(false);
+          }}
+        />
+      )}
+      
+      {/* Hours Modal */}
+      {showHoursModal && (
+        <HoursModal
+          hours={workingHours}
+          onClose={() => setShowHoursModal(false)}
+          onSave={(hours) => {
+            console.log('Save hours:', hours);
+            setShowHoursModal(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ============ SERVICE MODAL ============
+
+const ServiceModal = ({ service, onClose, onSave }) => {
+  const [name, setName] = useState(service?.name || '');
+  const [duration, setDuration] = useState(service?.duration || 30);
+  const [price, setPrice] = useState(service?.price || 0);
+  
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
+      <div className="bg-white rounded-t-[32px] p-6 w-full max-w-md shadow-2xl animate-slide-up">
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={onClose} className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center">
+            <X size={20} className="text-stone-500" />
+          </button>
+          <h2 className="text-xl font-bold text-stone-800">
+            {service ? 'עריכת שירות' : 'שירות חדש'}
+          </h2>
+          <div className="w-10"></div>
+        </div>
+        
+        <div className="space-y-4" style={{ direction: 'rtl' }}>
+          <div>
+            <label className="block text-stone-600 text-sm mb-2 font-medium">שם השירות</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none transition-colors text-lg"
+              placeholder="לדוגמה: תספורת גבר"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-stone-600 text-sm mb-2 font-medium">משך (דקות)</label>
+              <input
+                type="number"
+                value={duration}
+                onChange={(e) => setDuration(Number(e.target.value))}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none transition-colors text-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-stone-600 text-sm mb-2 font-medium">מחיר (₪)</label>
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value))}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none transition-colors text-lg"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <button
+          onClick={() => onSave({ name, duration, price })}
+          className="w-full mt-6 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-amber-500/20"
+        >
+          {service ? 'שמור שינויים' : 'הוסף שירות'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============ HOURS MODAL ============
+
+const HoursModal = ({ hours, onClose, onSave }) => {
+  const [editedHours, setEditedHours] = useState(hours);
+  
+  const updateHour = (idx, field, value) => {
+    const updated = [...editedHours];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setEditedHours(updated);
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
+      <div className="bg-white rounded-t-[32px] p-6 w-full max-w-md shadow-2xl animate-slide-up max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6 sticky top-0 bg-white">
+          <button onClick={onClose} className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center">
+            <X size={20} className="text-stone-500" />
+          </button>
+          <h2 className="text-xl font-bold text-stone-800">שעות פעילות</h2>
+          <div className="w-10"></div>
+        </div>
+        
+        <div className="space-y-4" style={{ direction: 'rtl' }}>
+          {editedHours.map((day, idx) => (
+            <div key={idx} className="bg-stone-50 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={() => updateHour(idx, 'isOpen', !day.isOpen)}
+                  className={`w-12 h-7 rounded-full transition-colors ${day.isOpen ? 'bg-green-500' : 'bg-stone-300'}`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${day.isOpen ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className="font-bold text-stone-800">{day.day}</span>
+              </div>
+              
+              {day.isOpen && (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="time"
+                    value={day.close}
+                    onChange={(e) => updateHour(idx, 'close', e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-center"
+                  />
+                  <span className="text-stone-400">עד</span>
+                  <input
+                    type="time"
+                    value={day.open}
+                    onChange={(e) => updateHour(idx, 'open', e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-center"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        <button
+          onClick={() => onSave(editedHours)}
+          className="w-full mt-6 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-amber-500/20 sticky bottom-0"
+        >
+          שמור שינויים
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============ CALENDAR SCREEN ============
+
+const CalendarScreen = ({ appointments, blockedSlots, onUpdateAppointment, onAddBlockedSlot }) => {
+  const [viewMode, setViewMode] = useState('day'); // day, week, month
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  
+  const formatDateHebrew = (date) => {
+    return date.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+  
+  const getAppointmentsForDate = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return appointments.filter(apt => apt.date === dateStr);
+  };
+  
+  const navigateDate = (direction) => {
+    const newDate = new Date(selectedDate);
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() + direction);
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() + (direction * 7));
+    } else {
+      newDate.setMonth(newDate.getMonth() + direction);
+    }
+    setSelectedDate(newDate);
+  };
+  
+  const timeSlots = [];
+  for (let hour = 8; hour <= 20; hour++) {
+    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+    timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
+  }
+  
+  const dayAppointments = getAppointmentsForDate(selectedDate);
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-28">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-stone-900 via-stone-800 to-black pt-12 pb-6 px-5 rounded-b-[40px] shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <button className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+            <Bell className="text-white" size={20} />
+          </button>
+          <h1 className="text-xl font-bold text-white">היומן שלי</h1>
+          <button 
+            onClick={() => setShowBlockModal(true)}
+            className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center"
+          >
+            <Lock className="text-white" size={20} />
+          </button>
+        </div>
+        
+        {/* View Mode Selector */}
+        <div className="flex justify-center gap-2 mb-4">
+          {[
+            { id: 'day', label: 'יום' },
+            { id: 'week', label: 'שבוע' },
+            { id: 'month', label: 'חודש' },
+          ].map((mode) => (
+            <button
+              key={mode.id}
+              onClick={() => setViewMode(mode.id)}
+              className={`px-5 py-2 rounded-full transition-all ${
+                viewMode === mode.id
+                  ? 'bg-white text-stone-800 font-bold'
+                  : 'bg-white/10 text-white/70'
+              }`}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+        
+        {/* Date Navigation */}
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => navigateDate(1)}
+            className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center"
+          >
+            <ChevronLeft className="text-white" size={24} />
+          </button>
+          <div className="text-center">
+            <p className="text-white font-bold text-lg">{formatDateHebrew(selectedDate)}</p>
+            <p className="text-white/60 text-sm">{dayAppointments.length} תורים</p>
+          </div>
+          <button 
+            onClick={() => navigateDate(-1)}
+            className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center"
+          >
+            <ChevronRight className="text-white" size={24} />
+          </button>
+        </div>
+      </div>
+      
+      {/* Add Button */}
+      <div className="px-4 pt-4">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg shadow-amber-500/20"
+        >
+          <Plus size={20} />
+          הוסף תור ידני
+        </button>
+      </div>
+      
+      {/* Day View */}
+      {viewMode === 'day' && (
+        <div className="px-4 pt-4">
+          {dayAppointments.length === 0 ? (
+            <div className="bg-white rounded-3xl p-8 text-center shadow-lg shadow-stone-200/30 border border-stone-100">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="text-amber-600" size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-stone-800 mb-2">אין תורים להיום</h3>
+              <p className="text-stone-500">היום פנוי לחלוטין</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {dayAppointments.map((apt) => (
+                <button
+                  key={apt.id}
+                  onClick={() => {
+                    setSelectedAppointment(apt);
+                    setShowAppointmentModal(true);
+                  }}
+                  className="w-full bg-white rounded-2xl p-4 shadow-lg shadow-stone-200/30 border border-stone-100 text-right hover:shadow-xl transition-shadow"
+                >
+                  <div className="flex items-center justify-between" style={{ direction: 'rtl' }}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        apt.status === 'completed' ? 'bg-blue-100' :
+                        apt.status === 'cancelled' ? 'bg-red-100' :
+                        'bg-amber-100'
+                      }`}>
+                        <Clock className={`${
+                          apt.status === 'completed' ? 'text-blue-600' :
+                          apt.status === 'cancelled' ? 'text-red-600' :
+                          'text-amber-600'
+                        }`} size={20} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-stone-800">{apt.clientName}</h4>
+                        <p className="text-stone-500 text-sm">{apt.service}</p>
+                      </div>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-stone-800">{apt.time}</p>
+                      <StatusBadge status={apt.status} />
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Week View */}
+      {viewMode === 'week' && (
+        <div className="px-4 pt-4">
+          <div className="bg-white rounded-2xl shadow-lg shadow-stone-200/30 border border-stone-100 overflow-hidden">
+            {[...Array(7)].map((_, dayOffset) => {
+              const date = new Date(selectedDate);
+              date.setDate(date.getDate() - date.getDay() + dayOffset);
+              const dayApts = getAppointmentsForDate(date);
+              const isToday = date.toDateString() === new Date().toDateString();
+              
+              return (
+                <div 
+                  key={dayOffset}
+                  className={`p-4 border-b border-stone-100 last:border-b-0 ${isToday ? 'bg-amber-50' : ''}`}
+                  style={{ direction: 'rtl' }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      dayApts.length > 0 ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-500'
+                    }`}>
+                      {dayApts.length} תורים
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-stone-800">
+                        {date.toLocaleDateString('he-IL', { weekday: 'short' })}
+                      </span>
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isToday ? 'bg-amber-500 text-white' : 'text-stone-600'
+                      }`}>
+                        {date.getDate()}
+                      </span>
+                    </div>
+                  </div>
+                  {dayApts.slice(0, 2).map((apt) => (
+                    <div key={apt.id} className="text-sm text-stone-600 mt-1">
+                      {apt.time} - {apt.clientName}
+                    </div>
+                  ))}
+                  {dayApts.length > 2 && (
+                    <p className="text-xs text-amber-600 mt-1">+{dayApts.length - 2} נוספים</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+      {/* Month View */}
+      {viewMode === 'month' && (
+        <div className="px-4 pt-4">
+          <div className="bg-white rounded-2xl p-4 shadow-lg shadow-stone-200/30 border border-stone-100">
+            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+              {['ש', 'ו', 'ה', 'ד', 'ג', 'ב', 'א'].map((day) => (
+                <span key={day} className="text-stone-400 text-sm font-medium py-2">{day}</span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {[...Array(35)].map((_, idx) => {
+                const firstDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                const startOffset = firstDay.getDay();
+                const dayNum = idx - startOffset + 1;
+                const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), dayNum);
+                const isCurrentMonth = date.getMonth() === selectedDate.getMonth();
+                const isToday = date.toDateString() === new Date().toDateString();
+                const dayApts = getAppointmentsForDate(date);
+                
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedDate(date);
+                      setViewMode('day');
+                    }}
+                    className={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm transition-colors ${
+                      !isCurrentMonth ? 'text-stone-300' :
+                      isToday ? 'bg-amber-500 text-white' :
+                      dayApts.length > 0 ? 'bg-amber-100 text-amber-700' :
+                      'text-stone-700 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span className="font-medium">{dayNum > 0 && dayNum <= 31 ? dayNum : ''}</span>
+                    {dayApts.length > 0 && isCurrentMonth && !isToday && (
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-0.5"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Appointment Detail Modal */}
+      {showAppointmentModal && selectedAppointment && (
+        <AppointmentModal
+          appointment={selectedAppointment}
+          onClose={() => setShowAppointmentModal(false)}
+          onUpdate={(status) => {
+            console.log('Update appointment:', selectedAppointment.id, status);
+            setShowAppointmentModal(false);
+          }}
+        />
+      )}
+      
+      {/* Add Appointment Modal */}
+      {showAddModal && (
+        <AddAppointmentModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={(apt) => {
+            console.log('Add appointment:', apt);
+            setShowAddModal(false);
+          }}
+          services={mockServices}
+        />
+      )}
+      
+      {/* Block Time Modal */}
+      {showBlockModal && (
+        <BlockTimeModal
+          onClose={() => setShowBlockModal(false)}
+          onBlock={(block) => {
+            console.log('Block time:', block);
+            setShowBlockModal(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ============ APPOINTMENT MODAL ============
+
+const AppointmentModal = ({ appointment, onClose, onUpdate }) => {
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
+      <div className="bg-white rounded-t-[32px] p-6 w-full max-w-md shadow-2xl animate-slide-up">
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={onClose} className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center">
+            <X size={20} className="text-stone-500" />
+          </button>
+          <h2 className="text-xl font-bold text-stone-800">פרטי התור</h2>
+          <div className="w-10"></div>
+        </div>
+        
+        <div className="bg-stone-50 rounded-2xl p-4 mb-6" style={{ direction: 'rtl' }}>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center">
+              <User className="text-amber-600" size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-stone-800 text-lg">{appointment.clientName}</h3>
+              <p className="text-stone-500">{appointment.clientPhone}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3 border-t border-stone-200 pt-4">
+            <div className="flex justify-between">
+              <span className="font-semibold text-stone-800">{appointment.service}</span>
+              <span className="text-stone-500">שירות</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-semibold text-stone-800">{appointment.date}</span>
+              <span className="text-stone-500">תאריך</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-semibold text-stone-800">{appointment.time}</span>
+              <span className="text-stone-500">שעה</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-semibold text-stone-800">{appointment.duration} דקות</span>
+              <span className="text-stone-500">משך</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-bold text-amber-600 text-lg">₪{appointment.price}</span>
+              <span className="text-stone-500">מחיר</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Contact Buttons */}
+        <div className="flex gap-3 mb-6">
+          <a 
+            href={`tel:${appointment.clientPhone}`}
+            className="flex-1 flex items-center justify-center gap-2 bg-blue-100 text-blue-600 py-3 rounded-xl font-semibold"
+          >
+            <Phone size={18} />
+            התקשר
+          </a>
+          <a 
+            href={`https://wa.me/972${appointment.clientPhone.replace(/-/g, '').substring(1)}`}
+            className="flex-1 flex items-center justify-center gap-2 bg-green-100 text-green-600 py-3 rounded-xl font-semibold"
+          >
+            <MessageCircle size={18} />
+            וואטסאפ
+          </a>
+        </div>
+        
+        {/* Action Buttons */}
+        {appointment.status === 'confirmed' && (
+          <div className="space-y-3">
+            <button
+              onClick={() => onUpdate('completed')}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-2xl font-bold"
+            >
+              <Check size={20} />
+              סמן כהושלם
+            </button>
+            <button
+              onClick={() => onUpdate('cancelled')}
+              className="w-full flex items-center justify-center gap-2 bg-red-100 text-red-600 py-4 rounded-2xl font-bold"
+            >
+              <X size={20} />
+              בטל תור
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============ CUSTOM DATE PICKER ============
+
+const CustomDatePicker = ({ selectedDate, onSelect, onClose }) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+  
+  const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+  const dayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+  
+  const navigateMonth = (direction) => {
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(newMonth.getMonth() + direction);
+    setCurrentMonth(newMonth);
+  };
+  
+  const isToday = (day) => {
+    const today = new Date();
+    return day === today.getDate() && 
+           currentMonth.getMonth() === today.getMonth() && 
+           currentMonth.getFullYear() === today.getFullYear();
+  };
+  
+  const isSelected = (day) => {
+    if (!selectedDate) return false;
+    const selected = new Date(selectedDate);
+    return day === selected.getDate() && 
+           currentMonth.getMonth() === selected.getMonth() && 
+           currentMonth.getFullYear() === selected.getFullYear();
+  };
+  
+  const isPast = (day) => {
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+  
+  const handleSelect = (day) => {
+    if (isPast(day)) return;
+    const selected = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    onSelect(selected.toISOString().split('T')[0]);
+    onClose();
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl animate-bounce-in">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <button 
+            onClick={() => navigateMonth(1)}
+            className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center hover:bg-amber-100 transition-colors"
+          >
+            <ChevronLeft className="text-stone-600" size={20} />
+          </button>
+          <h3 className="text-lg font-bold text-stone-800">
+            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </h3>
+          <button 
+            onClick={() => navigateMonth(-1)}
+            className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center hover:bg-amber-100 transition-colors"
+          >
+            <ChevronRight className="text-stone-600" size={20} />
+          </button>
+        </div>
+        
+        {/* Day Names */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {dayNames.map((day) => (
+            <div key={day} className="text-center text-stone-400 text-sm font-medium py-2">
+              {day}
+            </div>
+          ))}
+        </div>
+        
+        {/* Days Grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Empty cells for days before first of month */}
+          {[...Array(firstDayOfMonth)].map((_, i) => (
+            <div key={`empty-${i}`} className="aspect-square" />
+          ))}
+          
+          {/* Day cells */}
+          {[...Array(daysInMonth)].map((_, i) => {
+            const day = i + 1;
+            const past = isPast(day);
+            const today = isToday(day);
+            const selected = isSelected(day);
+            
+            return (
+              <button
+                key={day}
+                onClick={() => handleSelect(day)}
+                disabled={past}
+                className={`aspect-square rounded-xl flex items-center justify-center text-sm font-semibold transition-all ${
+                  selected
+                    ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                    : today
+                    ? 'bg-amber-100 text-amber-700 border-2 border-amber-300'
+                    : past
+                    ? 'text-stone-300 cursor-not-allowed'
+                    : 'text-stone-700 hover:bg-stone-100'
+                }`}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Cancel Button */}
+        <button
+          onClick={onClose}
+          className="w-full mt-5 py-3 text-stone-500 font-semibold hover:text-stone-700 transition-colors"
+        >
+          ביטול
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============ CUSTOM TIME PICKER ============
+
+const CustomTimePicker = ({ selectedTime, onSelect, onClose }) => {
+  const hours = ['09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+  const minutes = ['00', '15', '30', '45'];
+  
+  const [selectedHour, setSelectedHour] = useState(selectedTime?.split(':')[0] || '10');
+  const [selectedMinute, setSelectedMinute] = useState(selectedTime?.split(':')[1] || '00');
+  
+  const handleConfirm = () => {
+    onSelect(`${selectedHour}:${selectedMinute}`);
+    onClose();
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl animate-bounce-in">
+        <h3 className="text-lg font-bold text-stone-800 text-center mb-5">בחירת שעה</h3>
+        
+        {/* Time Display */}
+        <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-2xl p-6 mb-5">
+          <div className="flex items-center justify-center gap-2 text-white">
+            <span className="text-5xl font-bold">{selectedMinute}</span>
+            <span className="text-4xl font-light text-amber-400">:</span>
+            <span className="text-5xl font-bold">{selectedHour}</span>
+          </div>
+        </div>
+        
+        {/* Hour Selection */}
+        <div className="mb-4">
+          <p className="text-stone-500 text-sm mb-2 text-right">שעה</p>
+          <div className="grid grid-cols-6 gap-2">
+            {hours.map((hour) => (
+              <button
+                key={hour}
+                onClick={() => setSelectedHour(hour)}
+                className={`py-3 rounded-xl text-center font-semibold transition-all ${
+                  selectedHour === hour
+                    ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20'
+                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                {hour}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* Minute Selection */}
+        <div className="mb-5">
+          <p className="text-stone-500 text-sm mb-2 text-right">דקות</p>
+          <div className="grid grid-cols-4 gap-2">
+            {minutes.map((minute) => (
+              <button
+                key={minute}
+                onClick={() => setSelectedMinute(minute)}
+                className={`py-3 rounded-xl text-center font-semibold transition-all ${
+                  selectedMinute === minute
+                    ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20'
+                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                {minute}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 bg-stone-100 text-stone-600 rounded-xl font-semibold hover:bg-stone-200 transition-colors"
+          >
+            ביטול
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20"
+          >
+            אישור
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============ ADD APPOINTMENT MODAL ============
+
+const AddAppointmentModal = ({ onClose, onAdd, services }) => {
+  const [step, setStep] = useState(1); // 1: details, 2: service, 3: datetime
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [selectedService, setSelectedService] = useState(null);
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return 'בחר תאריך';
+    const date = new Date(dateStr);
+    const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    return `יום ${days[date.getDay()]}, ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  };
+  
+  const canProceed = () => {
+    if (step === 1) return clientName.trim() && clientPhone.trim();
+    if (step === 2) return selectedService !== null;
+    if (step === 3) return date && time;
+    return false;
+  };
+  
+  const handleNext = () => {
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      onAdd({ clientName, clientPhone, service: selectedService, date, time });
+    }
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
+      <div className="bg-white rounded-t-[32px] p-6 w-full max-w-md shadow-2xl animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <button onClick={onClose} className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center">
+            <X size={20} className="text-stone-500" />
+          </button>
+          <h2 className="text-xl font-bold text-stone-800">תור חדש</h2>
+          <div className="w-10"></div>
+        </div>
+        
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          {[1, 2, 3].map((s) => (
+            <div 
+              key={s}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                s === step ? 'w-8 bg-amber-500' : 
+                s < step ? 'w-4 bg-amber-300' : 'w-4 bg-stone-200'
+              }`}
+            />
+          ))}
+        </div>
+        
+        {/* Step 1: Client Details */}
+        {step === 1 && (
+          <div className="space-y-4" style={{ direction: 'rtl' }}>
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <User className="text-amber-600" size={32} />
+              </div>
+              <h3 className="font-bold text-stone-800">פרטי הלקוח</h3>
+              <p className="text-stone-500 text-sm">הזן את פרטי הלקוח</p>
+            </div>
+            
+            <div>
+              <label className="block text-stone-600 text-sm mb-2 font-medium">שם הלקוח</label>
+              <input
+                type="text"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none text-lg"
+                placeholder="הכנס שם מלא"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-stone-600 text-sm mb-2 font-medium">מספר טלפון</label>
+              <input
+                type="tel"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none text-lg"
+                placeholder="050-0000000"
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* Step 2: Service Selection */}
+        {step === 2 && (
+          <div style={{ direction: 'rtl' }}>
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Scissors className="text-amber-600" size={32} />
+              </div>
+              <h3 className="font-bold text-stone-800">בחירת שירות</h3>
+              <p className="text-stone-500 text-sm">בחר את השירות המבוקש</p>
+            </div>
+            
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto">
+              {services.map((service) => (
+                <button
+                  key={service.id}
+                  onClick={() => setSelectedService(service)}
+                  className={`w-full p-4 rounded-2xl border-2 text-right transition-all ${
+                    selectedService?.id === service.id
+                      ? 'border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 shadow-lg shadow-amber-500/10'
+                      : 'border-stone-200 hover:border-amber-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      selectedService?.id === service.id
+                        ? 'border-amber-500 bg-amber-500'
+                        : 'border-stone-300'
+                    }`}>
+                      {selectedService?.id === service.id && (
+                        <Check className="text-white" size={14} />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-stone-800">{service.name}</h4>
+                      <p className="text-stone-500 text-sm">
+                        {service.duration} דקות • <span className="text-amber-600 font-bold">₪{service.price}</span>
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Step 3: Date & Time */}
+        {step === 3 && (
+          <div style={{ direction: 'rtl' }}>
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Calendar className="text-amber-600" size={32} />
+              </div>
+              <h3 className="font-bold text-stone-800">תאריך ושעה</h3>
+              <p className="text-stone-500 text-sm">בחר מתי התור יתקיים</p>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Date Picker Button */}
+              <button
+                onClick={() => setShowDatePicker(true)}
+                className={`w-full p-5 rounded-2xl border-2 text-right transition-all flex items-center justify-between ${
+                  date ? 'border-amber-500 bg-amber-50' : 'border-stone-200 hover:border-amber-300'
+                }`}
+              >
+                <ChevronLeft className="text-stone-400" size={20} />
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-stone-500 text-sm">תאריך</p>
+                    <p className={`font-bold ${date ? 'text-stone-800' : 'text-stone-400'}`}>
+                      {formatDateDisplay(date)}
+                    </p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${date ? 'bg-amber-500' : 'bg-stone-200'}`}>
+                    <CalendarDays className={date ? 'text-white' : 'text-stone-500'} size={22} />
+                  </div>
+                </div>
+              </button>
+              
+              {/* Time Picker Button */}
+              <button
+                onClick={() => setShowTimePicker(true)}
+                className={`w-full p-5 rounded-2xl border-2 text-right transition-all flex items-center justify-between ${
+                  time ? 'border-amber-500 bg-amber-50' : 'border-stone-200 hover:border-amber-300'
+                }`}
+              >
+                <ChevronLeft className="text-stone-400" size={20} />
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-stone-500 text-sm">שעה</p>
+                    <p className={`font-bold text-2xl ${time ? 'text-stone-800' : 'text-stone-400'}`}>
+                      {time || '--:--'}
+                    </p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${time ? 'bg-amber-500' : 'bg-stone-200'}`}>
+                    <Clock className={time ? 'text-white' : 'text-stone-500'} size={22} />
+                  </div>
+                </div>
+              </button>
+            </div>
+            
+            {/* Summary */}
+            {selectedService && (
+              <div className="mt-4 p-4 bg-stone-50 rounded-2xl">
+                <div className="flex justify-between items-center">
+                  <span className="text-amber-600 font-bold">₪{selectedService.price}</span>
+                  <span className="text-stone-600">{selectedService.name} • {clientName}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Navigation Buttons */}
+        <div className="flex gap-3 mt-6">
+          {step > 1 && (
+            <button
+              onClick={() => setStep(step - 1)}
+              className="flex-1 py-4 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-colors"
+            >
+              חזרה
+            </button>
+          )}
+          <button
+            onClick={handleNext}
+            disabled={!canProceed()}
+            className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all ${
+              canProceed()
+                ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white shadow-lg shadow-amber-500/20'
+                : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+            }`}
+          >
+            {step === 3 ? 'הוסף תור' : 'המשך'}
+          </button>
+        </div>
+      </div>
+      
+      {/* Custom Date Picker */}
+      {showDatePicker && (
+        <CustomDatePicker
+          selectedDate={date}
+          onSelect={setDate}
+          onClose={() => setShowDatePicker(false)}
+        />
+      )}
+      
+      {/* Custom Time Picker */}
+      {showTimePicker && (
+        <CustomTimePicker
+          selectedTime={time}
+          onSelect={setTime}
+          onClose={() => setShowTimePicker(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// ============ BLOCK TIME MODAL ============
+
+const BlockTimeModal = ({ onClose, onBlock }) => {
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [reason, setReason] = useState('');
+  
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
+      <div className="bg-white rounded-t-[32px] p-6 w-full max-w-md shadow-2xl animate-slide-up">
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={onClose} className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center">
+            <X size={20} className="text-stone-500" />
+          </button>
+          <h2 className="text-xl font-bold text-stone-800">חסימת זמן</h2>
+          <div className="w-10"></div>
+        </div>
+        
+        <div className="space-y-4" style={{ direction: 'rtl' }}>
+          <div>
+            <label className="block text-stone-600 text-sm mb-2 font-medium">תאריך</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-stone-600 text-sm mb-2 font-medium">משעה</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full px-4 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-stone-600 text-sm mb-2 font-medium">עד שעה</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full px-4 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-stone-600 text-sm mb-2 font-medium">סיבה (אופציונלי)</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none"
+              placeholder="לדוגמה: הפסקת צהריים"
+            />
+          </div>
+        </div>
+        
+        <button
+          onClick={() => onBlock({ date, startTime, endTime, reason })}
+          className="w-full mt-6 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-amber-500/20"
+        >
+          חסום זמן
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============ STATS SCREEN ============
+
+const StatsScreen = ({ appointments }) => {
+  const [period, setPeriod] = useState('week'); // today, week, month, year, custom
+  const [showPeriodPicker, setShowPeriodPicker] = useState(false);
+  
+  // Calculate stats based on period
+  const getStatsForPeriod = () => {
+    const now = new Date();
+    let startDate = new Date();
+    let prevStartDate = new Date();
+    let prevEndDate = new Date();
+    
+    switch (period) {
+      case 'today':
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        prevStartDate = new Date(startDate);
+        prevStartDate.setDate(prevStartDate.getDate() - 1);
+        prevEndDate = new Date(startDate);
+        break;
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        prevStartDate.setDate(now.getDate() - 14);
+        prevEndDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(now.getMonth() - 1);
+        prevStartDate.setMonth(now.getMonth() - 2);
+        prevEndDate.setMonth(now.getMonth() - 1);
+        break;
+      case 'year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        prevStartDate.setFullYear(now.getFullYear() - 2);
+        prevEndDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 7);
+    }
+    
+    // Filter appointments for current period
+    const periodAppointments = appointments.filter(apt => {
+      const aptDate = new Date(apt.date);
+      return aptDate >= startDate && apt.status !== 'cancelled';
+    });
+    
+    // Calculate current stats
+    const totalIncome = periodAppointments.reduce((sum, apt) => sum + apt.price, 0);
+    const totalAppointments = periodAppointments.length;
+    const completedAppointments = periodAppointments.filter(apt => apt.status === 'completed').length;
+    const avgIncome = totalAppointments > 0 ? Math.round(totalIncome / totalAppointments) : 0;
+    
+    // Find most popular service
+    const serviceCount = {};
+    periodAppointments.forEach(apt => {
+      serviceCount[apt.service] = (serviceCount[apt.service] || 0) + 1;
+    });
+    const popularService = Object.entries(serviceCount).sort((a, b) => b[1] - a[1])[0];
+    
+    // Mock previous period stats for comparison
+    const prevTotalIncome = totalIncome * 0.85;
+    const prevTotalAppointments = Math.round(totalAppointments * 0.9);
+    
+    const incomeChange = prevTotalIncome > 0 ? Math.round(((totalIncome - prevTotalIncome) / prevTotalIncome) * 100) : 0;
+    const appointmentsChange = prevTotalAppointments > 0 ? Math.round(((totalAppointments - prevTotalAppointments) / prevTotalAppointments) * 100) : 0;
+    
+    return {
+      totalIncome,
+      totalAppointments,
+      completedAppointments,
+      avgIncome,
+      popularService: popularService ? popularService[0] : '-',
+      popularServiceCount: popularService ? popularService[1] : 0,
+      incomeChange,
+      appointmentsChange
+    };
+  };
+  
+  const stats = getStatsForPeriod();
+  
+  const periodLabels = {
+    today: 'היום',
+    week: 'השבוע',
+    month: 'החודש',
+    year: 'השנה',
+    custom: 'מותאם אישית'
+  };
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-28">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-stone-900 via-stone-800 to-black pt-12 pb-8 px-5 rounded-b-[40px] shadow-2xl">
+        <div className="flex items-center justify-center mb-4">
+          <h1 className="text-xl font-bold text-white">סטטיסטיקות</h1>
+        </div>
+        
+        {/* Period Selector */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShowPeriodPicker(true)}
+            className="flex items-center gap-2 bg-white/10 backdrop-blur px-5 py-3 rounded-2xl"
+          >
+            <ChevronDown className="text-white" size={20} />
+            <span className="text-white font-semibold">{periodLabels[period]}</span>
+          </button>
+        </div>
+        
+        {/* Main Income Card */}
+        <div className="mt-6 bg-white/10 backdrop-blur rounded-3xl p-6 text-center">
+          <p className="text-white/60 mb-2">סך הכנסות</p>
+          <p className="text-4xl font-bold text-white">₪{stats.totalIncome.toLocaleString()}</p>
+          <div className={`flex items-center justify-center gap-1 mt-2 ${stats.incomeChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {stats.incomeChange >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+            <span className="font-semibold">{Math.abs(stats.incomeChange)}%</span>
+            <span className="text-white/60">מהתקופה הקודמת</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Stats Grid */}
+      <div className="px-4 pt-6 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Total Appointments */}
+          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-stone-200/30 border border-stone-100">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`flex items-center gap-1 text-sm ${stats.appointmentsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.appointmentsChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                <span>{Math.abs(stats.appointmentsChange)}%</span>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <CalendarDays className="text-blue-600" size={20} />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-stone-800 text-right">{stats.totalAppointments}</p>
+            <p className="text-stone-500 text-sm text-right">סה״כ תורים</p>
+          </div>
+          
+          {/* Completed */}
+          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-stone-200/30 border border-stone-100">
+            <div className="flex items-center justify-end mb-3">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <Check className="text-green-600" size={20} />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-stone-800 text-right">{stats.completedAppointments}</p>
+            <p className="text-stone-500 text-sm text-right">תורים שהושלמו</p>
+          </div>
+          
+          {/* Average Income */}
+          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-stone-200/30 border border-stone-100">
+            <div className="flex items-center justify-end mb-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <DollarSign className="text-amber-600" size={20} />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-stone-800 text-right">₪{stats.avgIncome}</p>
+            <p className="text-stone-500 text-sm text-right">ממוצע לתור</p>
+          </div>
+          
+          {/* Popular Service */}
+          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-stone-200/30 border border-stone-100">
+            <div className="flex items-center justify-end mb-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Award className="text-purple-600" size={20} />
+              </div>
+            </div>
+            <p className="text-lg font-bold text-stone-800 text-right truncate">{stats.popularService}</p>
+            <p className="text-stone-500 text-sm text-right">השירות הפופולרי</p>
+          </div>
+        </div>
+        
+        {/* Additional Stats */}
+        <div className="bg-white rounded-2xl p-5 shadow-lg shadow-stone-200/30 border border-stone-100">
+          <h3 className="font-bold text-stone-800 mb-4 text-right">סיכום התקופה</h3>
+          <div className="space-y-4" style={{ direction: 'rtl' }}>
+            <div className="flex items-center justify-between py-2 border-b border-stone-100">
+              <span className="font-semibold text-stone-800">₪{stats.totalIncome.toLocaleString()}</span>
+              <span className="text-stone-500">סך הכנסות</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-stone-100">
+              <span className="font-semibold text-stone-800">{stats.totalAppointments}</span>
+              <span className="text-stone-500">מספר תורים</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-stone-100">
+              <span className="font-semibold text-stone-800">₪{stats.avgIncome}</span>
+              <span className="text-stone-500">ממוצע הכנסה לתור</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-stone-100">
+              <span className="font-semibold text-stone-800">{stats.popularService}</span>
+              <span className="text-stone-500">השירות הכי פופולרי</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className={`flex items-center gap-1 ${stats.incomeChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.incomeChange >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                <span className="font-semibold">{Math.abs(stats.incomeChange)}%</span>
+              </div>
+              <span className="text-stone-500">שינוי מתקופה קודמת</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Period Picker Modal */}
+      {showPeriodPicker && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
+          <div className="bg-white rounded-t-[32px] p-6 w-full max-w-md shadow-2xl animate-slide-up">
+            <div className="flex items-center justify-between mb-6">
+              <button onClick={() => setShowPeriodPicker(false)} className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center">
+                <X size={20} className="text-stone-500" />
+              </button>
+              <h2 className="text-xl font-bold text-stone-800">בחר תקופה</h2>
+              <div className="w-10"></div>
+            </div>
+            
+            <div className="space-y-2">
+              {Object.entries(periodLabels).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => {
+                    setPeriod(key);
+                    setShowPeriodPicker(false);
+                  }}
+                  className={`w-full p-4 rounded-2xl text-right transition-all ${
+                    period === key
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============ MAIN APP ============
+
+export default function EasyCalBarber() {
+  const [activeTab, setActiveTab] = useState('calendar');
+  const [notifications] = useState(mockNotifications.filter(n => !n.read));
+  
+  return (
+    <div className="font-sans antialiased" style={{ direction: 'rtl' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap');
+        
+        * {
+          font-family: 'Heebo', sans-serif;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes bounce-in {
+          0% {
+            transform: scale(0.9);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.02);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        
+        .animate-slide-up {
+          animation: slide-up 0.4s ease-out;
+        }
+        
+        .animate-bounce-in {
+          animation: bounce-in 0.3s ease-out;
+        }
+      `}</style>
+      
+      {activeTab === 'profile' && (
+        <ProfileScreen
+          profile={mockBarberProfile}
+          services={mockServices}
+          workingHours={mockWorkingHours}
+          reviews={mockReviews}
+          photos={mockPhotos}
+        />
+      )}
+      
+      {activeTab === 'calendar' && (
+        <CalendarScreen
+          appointments={mockAppointments}
+          blockedSlots={mockBlockedSlots}
+        />
+      )}
+      
+      {activeTab === 'stats' && (
+        <StatsScreen appointments={mockAppointments} />
+      )}
+      
+      <BottomNav 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        notificationCount={notifications.length}
+      />
+    </div>
+  );
+}
