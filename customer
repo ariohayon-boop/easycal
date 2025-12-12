@@ -1,0 +1,958 @@
+import React, { useState } from 'react';
+import { Search, Heart, Calendar, User, ChevronRight, MapPin, Star, Phone, MessageCircle, Check, Clock, Scissors, ChevronLeft, X } from 'lucide-react';
+
+// Mock Data - Only Barbers
+const mockBarbers = [
+  {
+    id: 1,
+    name: "Jaco's Barbershop",
+    address: "משעול גיל 1, כפר סבא",
+    city: "כפר סבא",
+    distance: "375 מטרים",
+    rating: 5.0,
+    reviews: 16,
+    quote: "מקצועי ונוח",
+    services: [
+      { id: 1, name: "תספורת גבר", duration: 40, price: 100 },
+      { id: 2, name: "תספורת + זקן", duration: 45, price: 130 },
+      { id: 3, name: "סידור זקן", duration: 20, price: 70 },
+      { id: 4, name: "צבע שיער", duration: 60, price: 180 },
+    ]
+  },
+  {
+    id: 2,
+    name: "The Blade Studio",
+    address: "רחוב הרצל 45, תל אביב",
+    city: "תל אביב",
+    distance: "1.2 ק״מ",
+    rating: 4.8,
+    reviews: 42,
+    quote: "חוויה מושלמת",
+    services: [
+      { id: 1, name: "תספורת גבר", duration: 35, price: 90 },
+      { id: 2, name: "תספורת + זקן", duration: 50, price: 140 },
+      { id: 3, name: "עיצוב גבות", duration: 15, price: 40 },
+    ]
+  },
+  {
+    id: 3,
+    name: "Gentleman's Corner",
+    address: "שדרות רוטשילד 22, תל אביב",
+    city: "תל אביב",
+    distance: "2.5 ק״מ",
+    rating: 4.9,
+    reviews: 89,
+    quote: "יוקרה ואיכות",
+    services: [
+      { id: 1, name: "תספורת פרימיום", duration: 45, price: 150 },
+      { id: 2, name: "טיפול פנים + תספורת", duration: 75, price: 250 },
+      { id: 3, name: "זקן מלא", duration: 30, price: 80 },
+    ]
+  }
+];
+
+const timeSlots = [
+  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"
+];
+
+// Barber Shop Image Placeholder Component
+const BarberShopImage = ({ className = "" }) => (
+  <div className={`bg-gradient-to-br from-stone-800 via-stone-900 to-black relative overflow-hidden ${className}`}>
+    {/* Pattern overlay */}
+    <div className="absolute inset-0 opacity-20">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="barberPattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M20 0L40 20L20 40L0 20Z" fill="none" stroke="#C9A962" strokeWidth="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#barberPattern)"/>
+      </svg>
+    </div>
+    {/* Scissors icon */}
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative">
+        <Scissors className="text-amber-500/30" size={64} />
+        <div className="absolute -inset-4 border border-amber-500/20 rounded-full"></div>
+        <div className="absolute -inset-8 border border-amber-500/10 rounded-full"></div>
+      </div>
+    </div>
+    {/* Gradient overlay */}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+  </div>
+);
+
+// Logo Placeholder
+const LogoPlaceholder = ({ name, size = "md" }) => {
+  const sizes = {
+    sm: "w-12 h-12 text-lg",
+    md: "w-16 h-16 text-xl",
+    lg: "w-24 h-24 text-3xl"
+  };
+  
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2);
+  
+  return (
+    <div className={`${sizes[size]} rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/20`}>
+      <span className="font-bold text-white font-serif">{initials}</span>
+    </div>
+  );
+};
+
+// ============ COMPONENTS ============
+
+// Bottom Navigation
+const BottomNav = ({ activeTab, setActiveTab }) => {
+  const tabs = [
+    { id: 'profile', label: 'פרופיל', icon: User },
+    { id: 'search', label: 'חיפוש', icon: Search },
+    { id: 'appointments', label: 'התורים שלי', icon: Calendar },
+    { id: 'favorites', label: 'מועדפים', icon: Heart },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-stone-100 px-2 pb-6 pt-3 z-50">
+      <div className="flex justify-around items-center max-w-md mx-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center py-2 px-5 rounded-2xl transition-all duration-300 ${
+                isActive 
+                  ? 'bg-gradient-to-br from-amber-50 to-orange-50 text-amber-700' 
+                  : 'text-stone-400 hover:text-stone-600'
+              }`}
+            >
+              <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+              <span className={`text-xs mt-1.5 ${isActive ? 'font-bold' : 'font-medium'}`}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
+
+// Empty State Component
+const EmptyState = ({ icon: Icon, title, subtitle, onSearch, onLogin }) => (
+  <div className="bg-white rounded-3xl p-8 mx-4 shadow-xl shadow-stone-200/50 border border-stone-100">
+    <div className="flex flex-col items-center text-center">
+      <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mb-5 shadow-inner">
+        <Icon className="text-amber-600" size={36} />
+      </div>
+      <h3 className="text-xl font-bold text-stone-800 mb-2 font-serif">{title}</h3>
+      <p className="text-stone-500 text-sm mb-8 leading-relaxed">{subtitle}</p>
+      <button
+        onClick={onSearch}
+        className="w-full bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white py-4 rounded-2xl font-bold text-base mb-3 hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300 active:scale-[0.98]"
+      >
+        חיפוש עסקים
+      </button>
+      <button
+        onClick={onLogin}
+        className="w-full bg-stone-50 text-stone-700 py-4 rounded-2xl font-semibold text-base border-2 border-stone-200 hover:border-amber-300 hover:bg-amber-50 transition-all duration-300"
+      >
+        התחברות או הרשמה
+      </button>
+    </div>
+  </div>
+);
+
+// Barber Card Component - Redesigned
+const BarberCard = ({ barber, onSelect, isFavorite, onToggleFavorite }) => (
+  <div 
+    className="bg-white rounded-3xl overflow-hidden shadow-xl shadow-stone-200/50 mx-4 mb-5 cursor-pointer hover:shadow-2xl hover:shadow-stone-300/50 transition-all duration-500 border border-stone-100 group"
+    onClick={() => onSelect(barber)}
+  >
+    {/* Image Section */}
+    <div className="relative h-52">
+      <BarberShopImage className="w-full h-full" />
+      
+      {/* Favorite Button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite(barber.id);
+        }}
+        className="absolute top-4 left-4 w-11 h-11 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110 active:scale-95"
+      >
+        <Heart 
+          size={22} 
+          className={`transition-colors duration-300 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-stone-600'}`}
+        />
+      </button>
+      
+      {/* Distance Badge */}
+      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
+        <span className="text-sm font-bold text-stone-700">{barber.distance}</span>
+      </div>
+      
+      {/* Logo - positioned at bottom */}
+      <div className="absolute -bottom-8 right-6">
+        <LogoPlaceholder name={barber.name} size="md" />
+      </div>
+    </div>
+    
+    {/* Content Section */}
+    <div className="pt-12 pb-5 px-5">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <Star className="fill-amber-400 text-amber-400" size={18} />
+          <span className="font-bold text-stone-800">{barber.rating.toFixed(1)}</span>
+          <span className="text-stone-400 text-sm">({barber.reviews})</span>
+        </div>
+        <div className="text-right">
+          <h3 className="font-bold text-lg text-stone-800 font-serif">{barber.name}</h3>
+          <p className="text-stone-500 text-sm flex items-center justify-end gap-1 mt-0.5">
+            <span>{barber.address}</span>
+            <MapPin size={14} />
+          </p>
+        </div>
+      </div>
+      
+      {/* Quote */}
+      <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+        <button className="bg-stone-100 hover:bg-amber-100 text-stone-600 hover:text-amber-700 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300">
+          קביעת תור
+        </button>
+        <p className="text-stone-500 text-sm italic">"{barber.quote}"</p>
+      </div>
+    </div>
+  </div>
+);
+
+// Search Screen
+const SearchScreen = ({ onSelectBarber, favorites, onToggleFavorite }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-28">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-stone-900 via-stone-800 to-black pt-14 pb-8 px-5 rounded-b-[40px] shadow-2xl">
+        {/* Search Bar */}
+        <div className="flex items-center bg-white/10 backdrop-blur-xl rounded-2xl px-5 py-4 border border-white/20">
+          <button className="p-1 opacity-70 hover:opacity-100 transition-opacity">
+            <div className="flex flex-col gap-1">
+              <div className="w-5 h-0.5 bg-white rounded-full"></div>
+              <div className="w-3.5 h-0.5 bg-white rounded-full"></div>
+              <div className="w-5 h-0.5 bg-white rounded-full"></div>
+            </div>
+          </button>
+          <div className="flex-1 text-right mr-4">
+            <p className="font-bold text-white text-lg">מיקומך הנוכחי</p>
+            <p className="text-white/60 text-sm">מספרות גברים באזורך</p>
+          </div>
+          <div className="w-11 h-11 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/30">
+            <Search className="text-white" size={20} />
+          </div>
+        </div>
+        
+        {/* Title */}
+        <div className="mt-6 text-right">
+          <h1 className="text-3xl font-bold text-white font-serif">
+            <span className="text-amber-400">EASY</span>CAL
+          </h1>
+          <p className="text-white/50 text-sm mt-1">הזמנת תור במספרה מעולם לא הייתה קלה יותר</p>
+        </div>
+      </div>
+      
+      {/* Section Title */}
+      <div className="px-5 pt-8 pb-4">
+        <div className="flex items-center justify-between">
+          <button className="text-amber-600 text-sm font-semibold">הצג הכל</button>
+          <h2 className="text-xl font-bold text-stone-800 font-serif">מספרות מומלצות</h2>
+        </div>
+      </div>
+      
+      {/* Barber List */}
+      <div className="pt-2">
+        {mockBarbers.map((barber) => (
+          <BarberCard
+            key={barber.id}
+            barber={barber}
+            onSelect={onSelectBarber}
+            isFavorite={favorites.includes(barber.id)}
+            onToggleFavorite={onToggleFavorite}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Appointments Screen
+const AppointmentsScreen = ({ appointments, onSearch, onLogin }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-28">
+      <div className="pt-14 pb-6 px-5 bg-white border-b border-stone-100">
+        <h1 className="text-2xl font-bold text-stone-800 text-right font-serif">התורים שלי</h1>
+      </div>
+      
+      <div className="px-4 pt-6">
+        <h2 className="text-lg font-bold text-stone-700 text-right mb-4 px-1">תורים עתידיים</h2>
+        
+        {appointments.length === 0 ? (
+          <EmptyState
+            icon={Calendar}
+            title="אין לך תורים עתידיים"
+            subtitle="כאן יופיעו התורים העתידיים שלך אחרי שתקבע/י אותם. אם כבר קבעת תורים, התחבר/י כדי לצפות בהם."
+            onSearch={onSearch}
+            onLogin={onLogin}
+          />
+        ) : (
+          <div className="space-y-4">
+            {appointments.map((apt, idx) => (
+              <div key={idx} className="bg-white rounded-3xl p-5 shadow-lg shadow-stone-200/50 border border-stone-100">
+                <div className="flex items-center gap-4" style={{ direction: 'rtl' }}>
+                  <div className="w-14 h-14 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
+                    <Scissors className="text-amber-600" size={24} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-stone-800 font-serif">{apt.barberName}</h3>
+                    <p className="text-stone-500 text-sm">{apt.service}</p>
+                    <p className="text-amber-600 font-bold mt-1">{apt.date} • {apt.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Favorites Screen
+const FavoritesScreen = ({ favorites, barbers, onSearch, onLogin, onSelectBarber, onToggleFavorite }) => {
+  const favoriteBarbers = barbers.filter(b => favorites.includes(b.id));
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-28">
+      <div className="pt-14 pb-6 px-5 bg-white border-b border-stone-100">
+        <h1 className="text-2xl font-bold text-stone-800 text-right font-serif">עסקים מועדפים</h1>
+      </div>
+      
+      <div className="pt-6">
+        {favoriteBarbers.length === 0 ? (
+          <EmptyState
+            icon={Heart}
+            title="אין לך עסקים מועדפים"
+            subtitle="תוכל לחפש עסקים ולהוסיף אותם למועדפים על ידי לחיצה על כפתור הלב"
+            onSearch={onSearch}
+            onLogin={onLogin}
+          />
+        ) : (
+          favoriteBarbers.map((barber) => (
+            <BarberCard
+              key={barber.id}
+              barber={barber}
+              onSelect={onSelectBarber}
+              isFavorite={true}
+              onToggleFavorite={onToggleFavorite}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Profile Screen
+const ProfileScreen = ({ user, onSearch, onLogin, onLogout }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-28">
+      <div className="pt-14 pb-6 px-5 bg-white border-b border-stone-100">
+        <h1 className="text-2xl font-bold text-stone-800 text-right font-serif">פרופיל</h1>
+      </div>
+      
+      <div className="pt-6">
+        {!user ? (
+          <EmptyState
+            icon={User}
+            title="התחבר כדי לצפות בפרופיל"
+            subtitle="לאחר התחברות או הרשמה תוכל לצפות בפרופיל שלך"
+            onSearch={onSearch}
+            onLogin={onLogin}
+          />
+        ) : (
+          <div className="px-4">
+            <div className="bg-white rounded-3xl p-6 shadow-xl shadow-stone-200/50 border border-stone-100">
+              <div className="flex items-center gap-4" style={{ direction: 'rtl' }}>
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <User className="text-white" size={36} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-stone-800 font-serif">{user.name}</h2>
+                  <p className="text-stone-500">{user.phone}</p>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                className="w-full mt-6 bg-red-50 text-red-600 py-4 rounded-xl font-semibold hover:bg-red-100 transition-colors"
+              >
+                התנתקות
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Barber Profile / Booking Screen
+const BarberProfileScreen = ({ barber, onBack, onBook }) => {
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [step, setStep] = useState('services');
+  
+  const dates = [];
+  const today = new Date();
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    dates.push(date);
+  }
+  
+  const formatDate = (date) => {
+    const days = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+    return {
+      day: days[date.getDay()],
+      date: date.getDate(),
+      month: date.toLocaleDateString('he-IL', { month: 'short' }),
+      full: date.toLocaleDateString('he-IL')
+    };
+  };
+
+  const handleServiceSelect = (service) => {
+    setSelectedService(service);
+    setStep('date');
+  };
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+    setStep('time');
+  };
+
+  const handleTimeSelect = (time) => {
+    setSelectedTime(time);
+    setStep('confirm');
+  };
+
+  const handleConfirm = () => {
+    onBook({
+      barber,
+      service: selectedService,
+      date: selectedDate,
+      time: selectedTime
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50 pb-8">
+      {/* Header Image */}
+      <div className="relative h-72">
+        <BarberShopImage className="w-full h-full" />
+        
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className="absolute top-12 right-4 bg-white/90 backdrop-blur-sm px-5 py-2.5 rounded-full flex items-center gap-2 shadow-lg font-semibold text-stone-700 hover:bg-white transition-colors"
+        >
+          <span>חזרה</span>
+          <ChevronLeft size={20} />
+        </button>
+        
+        {/* Logo overlay */}
+        <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+          <LogoPlaceholder name={barber.name} size="lg" />
+        </div>
+      </div>
+      
+      {/* Barber Info */}
+      <div className="pt-16 pb-5 px-5 bg-white text-center border-b border-stone-100">
+        <h1 className="text-2xl font-bold text-stone-800 font-serif">{barber.name}</h1>
+        <p className="text-stone-500 flex items-center justify-center gap-1.5 mt-2">
+          <MapPin size={16} className="text-amber-500" />
+          {barber.address}
+        </p>
+        
+        {/* Rating */}
+        <div className="flex items-center justify-center gap-2 mt-3">
+          <span className="text-stone-400 text-sm">({barber.reviews} ביקורות)</span>
+          <span className="font-bold text-stone-800">{barber.rating.toFixed(1)}</span>
+          <Star className="fill-amber-400 text-amber-400" size={18} />
+        </div>
+        
+        {/* Contact buttons */}
+        <div className="flex justify-center gap-3 mt-5">
+          <button className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center hover:bg-green-200 transition-colors">
+            <MessageCircle className="text-green-600" size={22} />
+          </button>
+          <button className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center hover:bg-amber-200 transition-colors">
+            <Phone className="text-amber-600" size={22} />
+          </button>
+        </div>
+      </div>
+      
+      {/* Booking Flow */}
+      <div className="mt-3 bg-white rounded-t-[32px] min-h-[400px] shadow-2xl shadow-stone-300/30">
+        {/* Progress indicator */}
+        <div className="pt-4 px-6">
+          <div className="flex items-center justify-center gap-2">
+            {['services', 'date', 'time', 'confirm'].map((s, idx) => (
+              <div 
+                key={s}
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  step === s ? 'w-8 bg-amber-500' : 
+                  ['services', 'date', 'time', 'confirm'].indexOf(step) > idx ? 'w-4 bg-amber-300' : 'w-4 bg-stone-200'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+        
+        {step === 'services' && (
+          <div className="p-5">
+            <h2 className="text-xl font-bold text-stone-800 text-right mb-5 font-serif">בחירת שירות</h2>
+            <div className="space-y-3">
+              {barber.services.map((service) => (
+                <button
+                  key={service.id}
+                  onClick={() => handleServiceSelect(service)}
+                  className="w-full p-5 rounded-2xl border-2 text-right transition-all duration-300 hover:shadow-lg border-stone-200 hover:border-amber-400 bg-white group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 bg-stone-100 group-hover:bg-amber-100 rounded-xl flex items-center justify-center transition-colors">
+                      <Scissors className="text-stone-400 group-hover:text-amber-600 transition-colors" size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-stone-800 text-lg">{service.name}</h3>
+                      <p className="text-stone-500 text-sm mt-1">
+                        <span className="text-amber-600 font-bold">₪{service.price}</span>
+                        <span className="mx-2">•</span>
+                        <span>{service.duration} דקות</span>
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {step === 'date' && (
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-5">
+              <button 
+                onClick={() => setStep('services')}
+                className="text-amber-600 font-semibold flex items-center gap-1"
+              >
+                <ChevronRight size={18} />
+                חזרה
+              </button>
+              <h2 className="text-xl font-bold text-stone-800 font-serif">בחירת תאריך</h2>
+            </div>
+            
+            {/* Selected service summary */}
+            <div className="bg-amber-50 rounded-2xl p-4 mb-5 text-right border border-amber-200">
+              <p className="text-stone-600 text-sm">השירות שנבחר:</p>
+              <p className="font-bold text-stone-800">{selectedService?.name} - ₪{selectedService?.price}</p>
+            </div>
+            
+            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide" style={{ direction: 'rtl' }}>
+              {dates.map((date, idx) => {
+                const formatted = formatDate(date);
+                const isSelected = selectedDate?.toDateString() === date.toDateString();
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleDateSelect(date)}
+                    className={`flex-shrink-0 w-20 py-4 rounded-2xl text-center transition-all duration-300 ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-105'
+                        : 'bg-white border-2 border-stone-200 hover:border-amber-300'
+                    }`}
+                  >
+                    <p className={`text-xs font-medium ${isSelected ? 'text-amber-100' : 'text-stone-400'}`}>
+                      {formatted.day}
+                    </p>
+                    <p className={`text-2xl font-bold my-1 ${isSelected ? 'text-white' : 'text-stone-800'}`}>
+                      {formatted.date}
+                    </p>
+                    <p className={`text-xs ${isSelected ? 'text-amber-100' : 'text-stone-400'}`}>
+                      {formatted.month}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
+        {step === 'time' && (
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-5">
+              <button 
+                onClick={() => setStep('date')}
+                className="text-amber-600 font-semibold flex items-center gap-1"
+              >
+                <ChevronRight size={18} />
+                חזרה
+              </button>
+              <h2 className="text-xl font-bold text-stone-800 font-serif">בחירת שעה</h2>
+            </div>
+            
+            <div className="grid grid-cols-4 gap-3">
+              {timeSlots.map((time, idx) => {
+                const isSelected = selectedTime === time;
+                const isAvailable = idx % 3 !== 0; // Mock some unavailable
+                return (
+                  <button
+                    key={time}
+                    onClick={() => isAvailable && handleTimeSelect(time)}
+                    disabled={!isAvailable}
+                    className={`py-4 rounded-xl text-center transition-all duration-300 font-semibold ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                        : isAvailable
+                        ? 'bg-white border-2 border-stone-200 hover:border-amber-300 text-stone-700'
+                        : 'bg-stone-100 text-stone-300 cursor-not-allowed'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
+        {step === 'confirm' && (
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-5">
+              <button 
+                onClick={() => setStep('time')}
+                className="text-amber-600 font-semibold flex items-center gap-1"
+              >
+                <ChevronRight size={18} />
+                חזרה
+              </button>
+              <h2 className="text-xl font-bold text-stone-800 font-serif">אישור הזמנה</h2>
+            </div>
+            
+            <div className="bg-gradient-to-br from-stone-50 to-stone-100 rounded-3xl p-5 space-y-4 border border-stone-200">
+              <div className="flex justify-between items-center text-right">
+                <span className="font-bold text-stone-800">{barber.name}</span>
+                <span className="text-stone-500 text-sm">עסק</span>
+              </div>
+              <div className="flex justify-between items-center text-right">
+                <span className="font-bold text-stone-800">{selectedService?.name}</span>
+                <span className="text-stone-500 text-sm">שירות</span>
+              </div>
+              <div className="flex justify-between items-center text-right">
+                <span className="font-bold text-stone-800">{selectedDate?.toLocaleDateString('he-IL')}</span>
+                <span className="text-stone-500 text-sm">תאריך</span>
+              </div>
+              <div className="flex justify-between items-center text-right">
+                <span className="font-bold text-stone-800">{selectedTime}</span>
+                <span className="text-stone-500 text-sm">שעה</span>
+              </div>
+              <div className="border-t-2 border-stone-200 pt-4 flex justify-between items-center">
+                <span className="font-bold text-2xl text-amber-600">₪{selectedService?.price}</span>
+                <span className="text-stone-500">סה״כ לתשלום</span>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleConfirm}
+              className="w-full mt-6 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-amber-500/30 hover:shadow-2xl hover:shadow-amber-500/40 transition-all duration-300 active:scale-[0.98]"
+            >
+              אישור ותשלום
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Success Modal
+const SuccessModal = ({ booking, onClose }) => (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-bounce-in">
+      <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-green-500/30">
+        <Check className="text-white" size={48} strokeWidth={3} />
+      </div>
+      <h2 className="text-2xl font-bold text-stone-800 mb-3 font-serif">הזמנתך נקבעה בהצלחה!</h2>
+      <p className="text-stone-500 mb-8 leading-relaxed">
+        התור שלך אצל <span className="font-bold text-stone-700">{booking.barber.name}</span>
+        <br />
+        נקבע ל-{booking.date.toLocaleDateString('he-IL')} בשעה {booking.time}
+      </p>
+      <button
+        onClick={onClose}
+        className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-amber-500/30 transition-all"
+      >
+        מעולה!
+      </button>
+    </div>
+  </div>
+);
+
+// Login Modal
+const LoginModal = ({ onClose, onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = () => {
+    if (isLogin) {
+      onLogin({ name: 'משתמש לדוגמה', phone });
+    } else {
+      onLogin({ name, phone });
+    }
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
+      <div className="bg-white rounded-t-[32px] p-6 w-full max-w-md shadow-2xl animate-slide-up">
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={onClose} className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center">
+            <X size={20} className="text-stone-500" />
+          </button>
+          <h2 className="text-2xl font-bold text-stone-800 font-serif">
+            {isLogin ? 'התחברות' : 'הרשמה'}
+          </h2>
+          <div className="w-10"></div>
+        </div>
+        
+        <div className="space-y-4" style={{ direction: 'rtl' }}>
+          {!isLogin && (
+            <div>
+              <label className="block text-stone-600 text-sm mb-2 font-medium">שם מלא</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none transition-colors text-lg"
+                placeholder="הכנס שם מלא"
+              />
+            </div>
+          )}
+          
+          <div>
+            <label className="block text-stone-600 text-sm mb-2 font-medium">מספר טלפון</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none transition-colors text-lg"
+              placeholder="050-0000000"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-stone-600 text-sm mb-2 font-medium">סיסמה</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 focus:border-amber-500 focus:outline-none transition-colors text-lg"
+              placeholder="••••••••"
+            />
+          </div>
+        </div>
+        
+        <button
+          onClick={handleSubmit}
+          className="w-full mt-6 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 transition-all"
+        >
+          {isLogin ? 'התחברות' : 'הרשמה'}
+        </button>
+        
+        <button
+          onClick={() => setIsLogin(!isLogin)}
+          className="w-full mt-4 text-amber-600 font-semibold"
+        >
+          {isLogin ? 'אין לך חשבון? הרשמה' : 'יש לך חשבון? התחברות'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============ MAIN APP ============
+
+export default function EasyCal() {
+  const [activeTab, setActiveTab] = useState('search');
+  const [selectedBarber, setSelectedBarber] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [user, setUser] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [successBooking, setSuccessBooking] = useState(null);
+
+  const handleSelectBarber = (barber) => {
+    setSelectedBarber(barber);
+  };
+
+  const handleToggleFavorite = (barberId) => {
+    setFavorites(prev => 
+      prev.includes(barberId)
+        ? prev.filter(id => id !== barberId)
+        : [...prev, barberId]
+    );
+  };
+
+  const handleBook = (booking) => {
+    setAppointments(prev => [...prev, {
+      barberName: booking.barber.name,
+      service: booking.service.name,
+      date: booking.date.toLocaleDateString('he-IL'),
+      time: booking.time,
+      price: booking.service.price
+    }]);
+    setSuccessBooking(booking);
+    setSelectedBarber(null);
+  };
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
+  if (selectedBarber) {
+    return (
+      <BarberProfileScreen
+        barber={selectedBarber}
+        onBack={() => setSelectedBarber(null)}
+        onBook={handleBook}
+      />
+    );
+  }
+
+  return (
+    <div className="font-sans antialiased" style={{ direction: 'rtl' }}>
+      {/* Custom styles */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap');
+        
+        * {
+          font-family: 'Heebo', sans-serif;
+        }
+        
+        .font-serif {
+          font-family: 'Heebo', sans-serif;
+          font-weight: 800;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes bounce-in {
+          0% {
+            transform: scale(0.8);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.05);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        
+        .animate-slide-up {
+          animation: slide-up 0.4s ease-out;
+        }
+        
+        .animate-bounce-in {
+          animation: bounce-in 0.5s ease-out;
+        }
+      `}</style>
+      
+      {activeTab === 'search' && (
+        <SearchScreen
+          onSelectBarber={handleSelectBarber}
+          favorites={favorites}
+          onToggleFavorite={handleToggleFavorite}
+        />
+      )}
+      
+      {activeTab === 'appointments' && (
+        <AppointmentsScreen
+          appointments={appointments}
+          onSearch={() => setActiveTab('search')}
+          onLogin={() => setShowLoginModal(true)}
+        />
+      )}
+      
+      {activeTab === 'favorites' && (
+        <FavoritesScreen
+          favorites={favorites}
+          barbers={mockBarbers}
+          onSearch={() => setActiveTab('search')}
+          onLogin={() => setShowLoginModal(true)}
+          onSelectBarber={handleSelectBarber}
+          onToggleFavorite={handleToggleFavorite}
+        />
+      )}
+      
+      {activeTab === 'profile' && (
+        <ProfileScreen
+          user={user}
+          onSearch={() => setActiveTab('search')}
+          onLogin={() => setShowLoginModal(true)}
+          onLogout={handleLogout}
+        />
+      )}
+      
+      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => setShowLoginModal(false)}
+          onLogin={handleLogin}
+        />
+      )}
+      
+      {successBooking && (
+        <SuccessModal
+          booking={successBooking}
+          onClose={() => setSuccessBooking(null)}
+        />
+      )}
+    </div>
+  );
+}
