@@ -1,0 +1,17 @@
+{
+  "name": "easycal",
+  "version": "1.0.0",
+  "description": "Barber shop appointment booking system",
+  "main": "index.html",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": ["barber", "appointment", "booking"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
