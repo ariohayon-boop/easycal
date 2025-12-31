@@ -336,20 +336,32 @@
 
         .comparison-header {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 2fr 1fr 1fr;
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
             padding: 2rem;
-            gap: 2rem;
+            gap: 1rem;
+            align-items: center;
         }
 
         .comparison-col {
             text-align: center;
         }
 
+        .comparison-col.label {
+            text-align: right;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
         .comparison-col h3 {
-            font-size: 1.8rem;
+            font-size: 1.3rem;
             font-weight: 800;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .comparison-col p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
         .comparison-col.highlight {
@@ -358,20 +370,31 @@
 
         .comparison-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 2fr 1fr 1fr;
             padding: 1.5rem 2rem;
-            gap: 2rem;
+            gap: 1rem;
             border-bottom: 1px solid rgba(59, 130, 246, 0.1);
             transition: background 0.3s;
+            align-items: center;
         }
 
         .comparison-row:hover {
             background: rgba(59, 130, 246, 0.05);
         }
 
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-label {
+            text-align: right;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
         .comparison-item {
             text-align: center;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .check {
@@ -393,13 +416,46 @@
             max-width: 600px;
             margin: 0 auto;
             background: rgba(30, 41, 59, 0.6);
-            padding: 4rem;
+            padding: 3rem 2rem;
             border-radius: 30px;
             border: 2px solid var(--gold);
             text-align: center;
             position: relative;
             overflow: hidden;
             box-shadow: 0 30px 80px rgba(245, 158, 11, 0.3);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pricing-card:hover {
+            box-shadow: 0 35px 90px rgba(245, 158, 11, 0.4);
+        }
+
+        .pricing-header {
+            position: relative;
+            z-index: 2;
+        }
+
+        .pricing-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pricing-card.expanded .pricing-details {
+            max-height: 1200px;
+        }
+
+        .pricing-toggle {
+            display: inline-block;
+            margin-top: 1rem;
+            color: var(--gold);
+            font-size: 2rem;
+            transition: transform 0.3s;
+        }
+
+        .pricing-card.expanded .pricing-toggle {
+            transform: rotate(180deg);
         }
 
         .pricing-card::before {
@@ -416,13 +472,13 @@
         }
 
         .price {
-            font-size: 5rem;
+            font-size: 4rem;
             font-weight: 900;
             background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            line-height: 1;
+            line-height: 1.2;
             margin: 2rem 0;
         }
 
@@ -578,16 +634,36 @@
                 font-size: 2.5rem;
             }
 
-            .comparison-header,
-            .comparison-row {
-                grid-template-columns: 1fr;
-                gap: 1rem;
+            .comparison-header {
+                padding: 1.5rem 1rem;
+                gap: 0.5rem;
+                grid-template-columns: 2fr 1fr 1fr;
             }
 
-            .comparison-col,
+            .comparison-col h3 {
+                font-size: 1rem;
+            }
+
+            .comparison-col p {
+                font-size: 0.75rem;
+            }
+
+            .comparison-row {
+                padding: 1rem;
+                gap: 0.5rem;
+                grid-template-columns: 2fr 1fr 1fr;
+            }
+
+            .comparison-label {
+                font-size: 0.85rem;
+            }
+
             .comparison-item {
-                border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-                padding-bottom: 1rem;
+                font-size: 0.85rem;
+            }
+
+            .check, .cross {
+                font-size: 1.2rem;
             }
 
             .features-grid {
@@ -611,6 +687,14 @@
             .faq-answer p {
                 padding: 0 1.5rem 1.5rem 1.5rem;
                 font-size: 1rem;
+            }
+
+            .price {
+                font-size: 3rem;
+            }
+
+            .pricing-card {
+                padding: 2rem 1.5rem;
             }
         }
 
@@ -718,7 +802,7 @@
                 </div>
                 <div class="comparison-table">
                     <div class="comparison-header">
-                        <div class="comparison-col"></div>
+                        <div class="comparison-col label"></div>
                         <div class="comparison-col highlight">
                             <h3>EasyCal</h3>
                             <p>הפתרון שלנו</p>
@@ -729,29 +813,29 @@
                         </div>
                     </div>
                     <div class="comparison-row">
-                        <div class="comparison-item"><strong>עלות שנתית</strong></div>
-                        <div class="comparison-item">₪3,500 (חד פעמי)</div>
-                        <div class="comparison-item">₪4,200/שנה</div>
+                        <div class="comparison-label">עלות שנתית</div>
+                        <div class="comparison-item">חד פעמי</div>
+                        <div class="comparison-item">₪4,200</div>
                     </div>
 
                     <div class="comparison-row">
-                        <div class="comparison-item"><strong>בעלות על הנתונים</strong></div>
-                        <div class="comparison-item"><span class="check">✓</span> מלאה</div>
+                        <div class="comparison-label">בעלות על נתונים</div>
+                        <div class="comparison-item"><span class="check">✓</span></div>
                         <div class="comparison-item"><span class="cross">✗</span></div>
                     </div>
                     <div class="comparison-row">
-                        <div class="comparison-item"><strong>אתר אישי</strong></div>
-                        <div class="comparison-item"><span class="check">✓</span> כן</div>
+                        <div class="comparison-label">אתר אישי</div>
+                        <div class="comparison-item"><span class="check">✓</span></div>
                         <div class="comparison-item"><span class="cross">✗</span></div>
                     </div>
                     <div class="comparison-row">
-                        <div class="comparison-item"><strong>תמיכה אישית</strong></div>
-                        <div class="comparison-item"><span class="check">✓</span> מלאה</div>
+                        <div class="comparison-label">תמיכה אישית</div>
+                        <div class="comparison-item"><span class="check">✓</span></div>
                         <div class="comparison-item">מוגבלת</div>
                     </div>
                     <div class="comparison-row">
-                        <div class="comparison-item"><strong>התאמה אישית</strong></div>
-                        <div class="comparison-item"><span class="check">✓</span> מלאה</div>
+                        <div class="comparison-label">התאמה אישית</div>
+                        <div class="comparison-item"><span class="check">✓</span></div>
                         <div class="comparison-item"><span class="cross">✗</span></div>
                     </div>
                 </div>
@@ -764,29 +848,34 @@
                 <h2>תמחור פשוט ושקוף</h2>
                 <p>תשלום חד-פעמי, בעלות לתמיד</p>
             </div>
-            <div class="pricing-card">
-                <h3 style="font-size: 2rem; margin-bottom: 1rem;">חבילת EasyCal מלאה</h3>
-                <div class="price">לפרטים</div>
-                <div class="price-sub">תשלום חד-פעמי | בעלות מלאה</div>
-                
-                <div class="price-features">
-                    <div class="price-feature">אתר אישי מותאם עם דומיין משלך</div>
-                    <div class="price-feature">מערכת ניהול תורים מתקדמת</div>
-                    <div class="price-feature">תזכורות SMS אוטומטיות ללקוחות</div>
-                    <div class="price-feature">דשבורד ניהול מלא</div>
-                    <div class="price-feature">הדרכה אישית מלאה בזום</div>
-                    <div class="price-feature">תמיכה טכנית שנה ראשונה</div>
-                    <div class="price-feature">עדכונים חינם שנה ראשונה</div>
-                    <div class="price-feature">התאמות אישיות ללא הגבלה</div>
+            <div class="pricing-card" id="pricingCard" onclick="togglePricing()">
+                <div class="pricing-header">
+                    <h3 style="font-size: 2rem; margin-bottom: 1rem;">חבילת EasyCal מלאה</h3>
+                    <div class="price">לפרטים</div>
+                    <div class="price-sub">תשלום חד-פעמי | בעלות מלאה</div>
+                    <div class="pricing-toggle">▼</div>
                 </div>
-
-                <button class="cta-primary" onclick="openWhatsApp()" style="width: 100%; margin-top: 2rem;">
-                    בואו נתחיל
-                </button>
                 
-                <p style="margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">
-                    צור קשר לקבלת הצעת מחיר מותאמת אישית
-                </p>
+                <div class="pricing-details">
+                    <div class="price-features">
+                        <div class="price-feature">אתר אישי מותאם עם דומיין משלך</div>
+                        <div class="price-feature">מערכת ניהול תורים מתקדמת</div>
+                        <div class="price-feature">תזכורות SMS אוטומטיות ללקוחות</div>
+                        <div class="price-feature">דשבורד ניהול מלא</div>
+                        <div class="price-feature">הדרכה אישית מלאה בזום</div>
+                        <div class="price-feature">תמיכה טכנית שנה ראשונה</div>
+                        <div class="price-feature">עדכונים חינם שנה ראשונה</div>
+                        <div class="price-feature">התאמות אישיות ללא הגבלה</div>
+                    </div>
+
+                    <button class="cta-primary" onclick="event.stopPropagation(); openWhatsApp();" style="width: 100%; margin-top: 2rem;">
+                        בואו נתחיל
+                    </button>
+                    
+                    <p style="margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+                        צור קשר לקבלת הצעת מחיר מותאמת אישית
+                    </p>
+                </div>
             </div>
         </section>
 
@@ -941,7 +1030,13 @@
         }
 
         function openWhatsApp() {
-            window.open('https://wa.me/972XXXXXXXXX?text=היי, אני מעוניין באתר EasyCal', '_blank');
+            window.open('https://wa.me/972544293963?text=היי, אני מעוניין באתר EasyCal', '_blank');
+        }
+
+        // Pricing card toggle
+        function togglePricing() {
+            const card = document.getElementById('pricingCard');
+            card.classList.toggle('expanded');
         }
 
         // FAQ Accordion
