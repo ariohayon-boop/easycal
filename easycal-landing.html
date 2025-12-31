@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyCal - מערכת ניהול תורים מתקדמת לספרים</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0F172A;
+            --primary-light: #1E293B;
+            --accent: #3B82F6;
+            --accent-glow: #60A5FA;
+            --gold: #F59E0B;
+            --gold-light: #FCD34D;
+            --text: #F8FAFC;
+            --text-muted: #CBD5E1;
+            --bg-gradient-start: #0F172A;
+            --bg-gradient-end: #1E293B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            color: var(--text);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--accent-glow);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        /* Gradient mesh overlay */
+        .gradient-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(96, 165, 250, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+            animation: meshMove 30s infinite alternate ease-in-out;
+        }
+
+        @keyframes meshMove {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(30px) scale(1.05); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Navigation */
+        nav {
+            padding: 2rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .logo {
+            font-family: 'Heebo', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .cta-nav {
+            padding: 0.8rem 2rem;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-glow) 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .cta-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 6rem 0 8rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-family: 'Heebo', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero h1 .gradient-text {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+
+        .hero .subtitle {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            line-height: 1.6;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .cta-primary {
+            padding: 1.2rem 3rem;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: var(--primary);
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .cta-primary:hover::before {
+            left: 100%;
+        }
+
+        .cta-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(245, 158, 11, 0.5);
+        }
+
+        .cta-secondary {
+            padding: 1.2rem 3rem;
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--accent);
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cta-secondary:hover {
+            background: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 8rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .section-header h2 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .section-header p {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 3rem;
+        }
+
+        .feature-card {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 3rem;
+            border-radius: 25px;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .feature-card:hover::after {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 25px 70px rgba(59, 130, 246, 0.2);
+        }
+
+        .feature-number {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0.3;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-description {
+            color: var(--text-muted);
+            line-height: 1.8;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Comparison Table */
+        .comparison {
+            padding: 8rem 0;
+            background: rgba(30, 41, 59, 0.3);
+            margin: 4rem -2rem;
+        }
+
+        .comparison-table {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 30px;
+            overflow: hidden;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(20px);
+        }
+
+        .comparison-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        .comparison-col {
+            text-align: center;
+        }
+
+        .comparison-col h3 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .comparison-col.highlight {
+            color: var(--gold);
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            padding: 1.5rem 2rem;
+            gap: 2rem;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+            transition: background 0.3s;
+        }
+
+        .comparison-row:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .comparison-item {
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .check {
+            color: var(--gold);
+            font-size: 1.5rem;
+        }
+
+        .cross {
+            color: #EF4444;
+            font-size: 1.5rem;
+        }
+
+        /* Pricing */
+        .pricing {
+            padding: 8rem 0;
+        }
+
+        .pricing-card {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(30, 41, 59, 0.6);
+            padding: 4rem;
+            border-radius: 30px;
+            border: 2px solid var(--gold);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(245, 158, 11, 0.3);
+        }
+
+        .pricing-card::before {
+            content: 'מומלץ';
+            position: absolute;
+            top: 20px;
+            right: -30px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: var(--primary);
+            padding: 0.5rem 3rem;
+            transform: rotate(45deg);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .price {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin: 2rem 0;
+        }
+
+        .price-sub {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+
+        .price-features {
+            text-align: right;
+            margin: 3rem 0;
+        }
+
+        .price-feature {
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .price-feature::before {
+            content: '✓';
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        /* CTA Section */
+        .final-cta {
+            padding: 8rem 0;
+            text-align: center;
+        }
+
+        .final-cta h2 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 2rem;
+        }
+
+        .final-cta p {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(59, 130, 246, 0.1);
+            color: var(--text-muted);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* FAQ Section */
+        .faq {
+            padding: 8rem 0;
+        }
+
+        .faq-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .faq-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .faq-question {
+            padding: 2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .faq-question h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 0;
+            padding-left: 2rem;
+        }
+
+        .faq-icon {
+            font-size: 2rem;
+            color: var(--accent);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 300;
+            flex-shrink: 0;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+            color: var(--gold);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 500px;
+        }
+
+        .faq-answer p {
+            padding: 0 2rem 2rem 2rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .comparison-header,
+            .comparison-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .comparison-col,
+            .comparison-item {
+                border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+                padding-bottom: 1rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-cta-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .faq-question h3 {
+                font-size: 1.1rem;
+                padding-left: 1rem;
+            }
+
+            .faq-question {
+                padding: 1.5rem;
+            }
+
+            .faq-answer p {
+                padding: 0 1.5rem 1.5rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* Scroll animations */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scroll-reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-particles" id="particles"></div>
+    <div class="gradient-mesh"></div>
+
+    <!-- Navigation -->
+    <div class="container">
+        <nav>
+            <div class="logo">EasyCal</div>
+            <button class="cta-nav" onclick="scrollToContact()">צור קשר</button>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>
+                הפתרון המתקדם<br>
+                <span class="gradient-text">לניהול תורים לספרים</span>
+            </h1>
+            <p class="subtitle">
+                אתר אישי מותאם אישית עם מערכת ניהול תורים מתקדמת.
+                ללא מנויים חודשיים, ללא תלות בצד שלישי, ללא דיווח אוטומטי.
+                <strong>הנתונים שלך, השליטה שלך.</strong>
+            </p>
+            <div class="hero-cta-group">
+                <button class="cta-primary" onclick="scrollToPricing()">קבל הצעת מחיר</button>
+                <button class="cta-secondary" onclick="scrollToFAQ()">שאלות נפוצות</button>
+            </div>
+        </section>
+
+
+
+        <!-- Features -->
+        <section class="features">
+            <div class="section-header scroll-reveal">
+                <h2>למה EasyCal?</h2>
+                <p>הפתרון המושלם לכל ספר שרוצה עצמאות, חיסכון, ושליטה מלאה על העסק שלו</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-number">01</div>
+                    <h3 class="feature-title">אתר אישי משלך</h3>
+                    <p class="feature-description">
+                        לא עוד פלטפורמה משותפת. קבל אתר ייחודי עם הדומיין שלך,
+                        עיצוב מותאם, ושליטה מלאה על כל היבט.
+                    </p>
+                </div>
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-number">02</div>
+                    <h3 class="feature-title">חיסכון עצום</h3>
+                    <p class="feature-description">
+                        תשלום חד-פעמי במקום מנויים חודשיים. חסוך אלפי שקלים בשנה
+                        וקבל בעלות מלאה על המערכת לתמיד.
+                    </p>
+                </div>
+
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-number">03</div>
+                    <h3 class="feature-title">ניהול חכם</h3>
+                    <p class="feature-description">
+                        לוח שנה אינטואיטיבי, תזכורות אוטומטיות ב-SMS, ביטולים,
+                        שינויים, וחסימת זמנים - הכל בממשק אחד פשוט.
+                    </p>
+                </div>
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-number">04</div>
+                    <h3 class="feature-title">אפס תלות</h3>
+                    <p class="feature-description">
+                        לא תלוי בחברה אחת. המערכת שלך, הכללים שלך.
+                        מתי שתרצה - תוכל לשדרג, לשנות, להתאים אישית.
+                    </p>
+                </div>
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-number">05</div>
+                    <h3 class="feature-title">תמיכה מלאה</h3>
+                    <p class="feature-description">
+                        הדרכה אישית, תמיכה טכנית, ועדכונים חינם בשנה הראשונה.
+                        אתה לא לבד - אנחנו איתך לאורך כל הדרך.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison -->
+        <section class="comparison scroll-reveal">
+            <div class="container">
+                <div class="section-header">
+                    <h2>EasyCal מול אחרים</h2>
+                    <p>השוואה ישירה - למה כדאי לעבור אלינו</p>
+                </div>
+                <div class="comparison-table">
+                    <div class="comparison-header">
+                        <div class="comparison-col"></div>
+                        <div class="comparison-col highlight">
+                            <h3>EasyCal</h3>
+                            <p>הפתרון שלנו</p>
+                        </div>
+                        <div class="comparison-col">
+                            <h3>אחרים</h3>
+                            <p>מתחרים</p>
+                        </div>
+                    </div>
+                    <div class="comparison-row">
+                        <div class="comparison-item"><strong>עלות שנתית</strong></div>
+                        <div class="comparison-item">₪3,500 (חד פעמי)</div>
+                        <div class="comparison-item">₪4,200/שנה</div>
+                    </div>
+
+                    <div class="comparison-row">
+                        <div class="comparison-item"><strong>בעלות על הנתונים</strong></div>
+                        <div class="comparison-item"><span class="check">✓</span> מלאה</div>
+                        <div class="comparison-item"><span class="cross">✗</span></div>
+                    </div>
+                    <div class="comparison-row">
+                        <div class="comparison-item"><strong>אתר אישי</strong></div>
+                        <div class="comparison-item"><span class="check">✓</span> כן</div>
+                        <div class="comparison-item"><span class="cross">✗</span></div>
+                    </div>
+                    <div class="comparison-row">
+                        <div class="comparison-item"><strong>תמיכה אישית</strong></div>
+                        <div class="comparison-item"><span class="check">✓</span> מלאה</div>
+                        <div class="comparison-item">מוגבלת</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div class="comparison-item"><strong>התאמה אישית</strong></div>
+                        <div class="comparison-item"><span class="check">✓</span> מלאה</div>
+                        <div class="comparison-item"><span class="cross">✗</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="pricing scroll-reveal" id="pricing">
+            <div class="section-header">
+                <h2>תמחור פשוט ושקוף</h2>
+                <p>תשלום חד-פעמי, בעלות לתמיד</p>
+            </div>
+            <div class="pricing-card">
+                <h3 style="font-size: 2rem; margin-bottom: 1rem;">חבילת EasyCal מלאה</h3>
+                <div class="price">לפרטים</div>
+                <div class="price-sub">תשלום חד-פעמי | בעלות מלאה</div>
+                
+                <div class="price-features">
+                    <div class="price-feature">אתר אישי מותאם עם דומיין משלך</div>
+                    <div class="price-feature">מערכת ניהול תורים מתקדמת</div>
+                    <div class="price-feature">תזכורות SMS אוטומטיות ללקוחות</div>
+                    <div class="price-feature">דשבורד ניהול מלא</div>
+                    <div class="price-feature">הדרכה אישית מלאה בזום</div>
+                    <div class="price-feature">תמיכה טכנית שנה ראשונה</div>
+                    <div class="price-feature">עדכונים חינם שנה ראשונה</div>
+                    <div class="price-feature">התאמות אישיות ללא הגבלה</div>
+                </div>
+
+                <button class="cta-primary" onclick="openWhatsApp()" style="width: 100%; margin-top: 2rem;">
+                    בואו נתחיל
+                </button>
+                
+                <p style="margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+                    צור קשר לקבלת הצעת מחיר מותאמת אישית
+                </p>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq scroll-reveal">
+            <div class="section-header">
+                <h2>שאלות נפוצות</h2>
+                <p>כל מה שרצית לדעת על EasyCal</p>
+            </div>
+            
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>מה ההבדל בין EasyCal למערכות אחרות?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>EasyCal היא מערכת שבנויה במיוחד עבורך - אתר אישי משלך עם דומיין משלך, ללא תלות בחברות חיצוניות. אתה משלם פעם אחת ובעלים על המערכת לתמיד, בניגוד למנויים חודשיים שנמשכים לנצח. בנוסף, הנתונים שלך נשארים אצלך בלבד.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>כמה זמן לוקח לבנות את האתר?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>בדרך כלל תוך 7-14 ימי עבודה האתר מוכן ופעיל. זה כולל עיצוב מותאם אישית, הדרכה מלאה, ובדיקות איכות. במקרים דחופים, ניתן לקצר את הזמן.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>האם אני צריך ידע טכני כדי להפעיל את המערכת?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>בכלל לא! המערכת בנויה להיות פשוטה ואינטואיטיבית. בנוסף, אנחנו נותנים הדרכה אישית מלאה בזום ונלווה אותך עד שתרגיש בנוח לחלוטין עם המערכת.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>מה קורה אם אני רוצה לשנות משהו באתר אחרי שהוא מוכן?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>בשנה הראשונה, כל שינוי או עדכון קטן (שינוי צבעים, טקסטים, הוספת שירותים) הוא חינם לחלוטין. אחרי שנה, יש לנו חבילות תחזוקה זולות או שאפשר לשלם לפי שעה לפי הצורך.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>האם הלקוחות שלי צריכים להוריד אפליקציה?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>לא! זה אחד היתרונות הגדולים. הלקוחות שלך פשוט נכנסים לאתר דרך הדפדפן (כמו כל אתר אינטרנט), קובעים תור תוך 30 שניות, ומקבלים תזכורת ב-SMS. אפס התקנות, אפס סיבוכים.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>מה כולל התשלום החד-פעמי?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>התשלום כולל: בניית אתר מלא מותאם אישית, מערכת ניהול תורים, תזכורות SMS, דשבורד ניהול, הדרכה אישית, תמיכה טכנית שנה ראשונה, עדכונים חינם שנה ראשונה, והתאמות ללא הגבלה.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>האם יש עלויות חודשיות נוספות?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>יש עלות סמלית של אחסון (Hosting) - בדרך כלל 20-50 ₪ לחודש, תלוי בספק. זה הרבה יותר זול ממנויים של מאות שקלים. בנוסף, שליחת SMS לתזכורות מחוייבת לפי כמות ההודעות (כ-0.15 ₪ להודעה).</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>מה קורה אם אני לא מרוצה?</h3>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>אנחנו עובדים איתך צעד אחר צעד ומראים לך את ההתקדמות. לפני שמסיימים, אתה רואה הכל, בודק, ומאשר. אם משהו לא מתאים - אנחנו משנים עד שאתה מרוצה ב-100%.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="final-cta scroll-reveal">
+            <h2>מוכן לקחת שליטה על העסק שלך?</h2>
+            <p>הצטרף למאות ספרים שכבר עברו ל-EasyCal</p>
+            <button class="cta-primary" onclick="openWhatsApp()">
+                דבר איתנו עכשיו
+            </button>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 EasyCal. כל הזכויות שמורות.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">מערכת ניהול תורים מתקדמת לספרים</p>
+        </div>
+    </footer>
+
+    <script>
+        // Generate particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Scroll reveal animation
+        function revealOnScroll() {
+            const reveals = document.querySelectorAll('.scroll-reveal');
+            
+            reveals.forEach(reveal => {
+                const windowHeight = window.innerHeight;
+                const revealTop = reveal.getBoundingClientRect().top;
+                const revealPoint = 100;
+                
+                if (revealTop < windowHeight - revealPoint) {
+                    reveal.classList.add('active');
+                }
+            });
+        }
+
+        // Smooth scroll functions
+        function scrollToContact() {
+            document.querySelector('.final-cta').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function scrollToPricing() {
+            document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function scrollToFAQ() {
+            document.querySelector('.faq').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function openWhatsApp() {
+            window.open('https://wa.me/972XXXXXXXXX?text=היי, אני מעוניין באתר EasyCal', '_blank');
+        }
+
+        // FAQ Accordion
+        function initFAQ() {
+            const faqItems = document.querySelectorAll('.faq-item');
+            
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                
+                question.addEventListener('click', () => {
+                    const isActive = item.classList.contains('active');
+                    
+                    // Close all other items
+                    faqItems.forEach(otherItem => {
+                        otherItem.classList.remove('active');
+                    });
+                    
+                    // Toggle current item
+                    if (!isActive) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            createParticles();
+            revealOnScroll();
+            initFAQ();
+        });
+
+        window.addEventListener('scroll', revealOnScroll);
+    </script>
+</body>
+</html>
